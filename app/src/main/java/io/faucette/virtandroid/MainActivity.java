@@ -10,7 +10,7 @@ import io.faucette.virtandroid.javascript.JSRuntime;
 public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        final JSRuntime runtime = new JSRuntime(this);
+        JSRuntime runtime = new JSRuntime(this);
         runtime.start();
 
         super.onCreate(savedInstanceState);

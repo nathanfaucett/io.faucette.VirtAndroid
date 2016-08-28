@@ -18,16 +18,16 @@ public class JSConsole extends JSObject implements IJSConsole {
 
     @Override
     public void log(final JSValue value) {
-        Log.i("js://console.log()", value.toString());
+        Log.i("js://console.log", value.toString());
     }
 
     @Override
     public void warn(final JSValue value) {
-        Log.d("js://console.warn()", value.toString());
+        Log.d("js://console.warn", value.toString());
     }
 
     @Override
     public void error(final JSValue value) {
-        Log.e("js://console.error()", value.toString());
+        Log.e("js://console.error", value.toString());
     }
 }

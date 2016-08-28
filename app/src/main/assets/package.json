@@ -1,0 +1,11 @@
+{
+  "name": "io.faucette.virtandroid",
+  "version": "1.0.0",
+  "description": "virt android javascript example app",
+  "main": "src/index.js",
+  "author": "Nathan Faucett",
+  "license": "MIT",
+  "dependencies": {
+    "@nathanfaucett/is_null": "0.0.1"
+  }
+}

@@ -2,7 +2,6 @@ package io.faucette.virtandroid.javascript;
 
 
 import android.app.Activity;
-import android.util.Log;
 
 import org.liquidplayer.webkit.javascriptcore.JSContext;
 import org.liquidplayer.webkit.javascriptcore.JSFunction;
@@ -49,7 +48,7 @@ public class JSRuntime extends JSContext {
 
         _rootModule = new JSModule(this, ".", null);
         _rootModule.setActivity(activity);
-        _rootModule.require("./index");
+        _rootModule.require(".");
     }
 
     public void setActivity(Activity activity) {
