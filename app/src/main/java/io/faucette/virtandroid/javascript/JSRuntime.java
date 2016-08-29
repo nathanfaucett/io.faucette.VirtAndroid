@@ -2,11 +2,14 @@ package io.faucette.virtandroid.javascript;
 
 
 import android.app.Activity;
+import android.util.Log;
 
 import org.liquidplayer.webkit.javascriptcore.JSContext;
 import org.liquidplayer.webkit.javascriptcore.JSFunction;
+import org.liquidplayer.webkit.javascriptcore.JSObject;
 import org.liquidplayer.webkit.javascriptcore.JSValue;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 
@@ -15,6 +18,12 @@ import java.util.ArrayList;
  */
 public class JSRuntime extends JSContext {
     private JSModule _rootModule;
+    private final String _initScript = (
+            "var process = {};\n" +
+            "process.nextTick = function(fn) {setImmediate(fn);};\n" +
+            "function Buffer() {}\n" +
+            "Buffer.isBuffer = function() { return false; };"
+    );
 
     private long _id;
     private long _startTime;
@@ -95,8 +104,14 @@ public class JSRuntime extends JSContext {
             }
         });
 
+        property("global", getThis());
         property("console", new JSConsole(this));
-        property("process", new JSProcess(this));
+
+        try {
+            property("WebSocket", new JSWebSocket(this));
+        } catch (NoSuchMethodException e) {
+            Log.e("JSRuntime", e.toString());
+        }
 
         property("setTimeout", new JSFunction(this, "setTimeout") {
             public long setTimeout(final JSFunction fn, final JSValue delay) {
@@ -115,6 +130,8 @@ public class JSRuntime extends JSContext {
                 _this.clearTimeout(id);
             }
         });
+
+        evaluateScript(_initScript);
     }
 
     private void _run() {

@@ -3,6 +3,7 @@ var virt = require("@nathanfaucett/virt"),
 
 
 console.log(math.add(1, 1));
+
 setImmediate(function() {
     console.log(math.add(2, 2));
 });
@@ -20,5 +21,16 @@ console.log("id " + id + " will never be called");
 
 var now = Date.now();
 process.nextTick(function onNextTick() {
-    console.log(Date.now() - now);
+    console.log("nextTick: " + (Date.now() - now) + "ms");
 });
+
+
+var socket = new WebSocket("ws://localhost:9999");
+
+socket.onopen = function() {
+    console.log("WebSocket connected");
+};
+
+socket.onmessage = function(data) {
+    console.log(data);
+};

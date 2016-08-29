@@ -51,7 +51,7 @@ public class JSModule extends JSObject {
         property("exports", new JSObject(ctx));
         property("parent", parent);
 
-        property("filename", null);
+        property("filename", id);
         property("loaded", false);
         property("children", new JSArray<JSModule>(ctx, JSModule.class));
     }
@@ -212,6 +212,8 @@ public class JSModule extends JSObject {
         };
 
         function.call(_this, _this, _this.property("exports"), require);
+
+        _this.property("loaded", new JSValue(ctx, true));
     }
 
     private void throwJSError(String message) {

@@ -10,6 +10,9 @@ import io.faucette.virtandroid.javascript.JSRuntime;
 public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        SocketServer server = new SocketServer(9999);
+        server.start();
+
         JSRuntime runtime = new JSRuntime(this);
         runtime.start();
 

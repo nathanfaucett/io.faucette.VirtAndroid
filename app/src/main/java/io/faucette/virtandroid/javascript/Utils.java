@@ -4,7 +4,7 @@ package io.faucette.virtandroid.javascript;
 import android.content.res.AssetManager;
 import android.util.Log;
 
-import org.liquidplayer.webkit.javascriptcore.JSArrayBuffer;
+import org.liquidplayer.webkit.javascriptcore.JSArray;
 import org.liquidplayer.webkit.javascriptcore.JSContext;
 import org.liquidplayer.webkit.javascriptcore.JSUint8Array;
 
@@ -69,8 +69,8 @@ public class Utils {
         try {
             path = new URI(path).normalize().toString();
         } catch (URISyntaxException e) {
-            path = ".";
             Log.e("Utils", e.toString());
+            path = ".";
         }
         return path.equals("") ? "." : path;
     }
@@ -91,14 +91,14 @@ public class Utils {
         int depth = Utils.normalize(root).split(File.separator).length;
         String fullPath = Utils.joinPath(root, id);
 
-        if (Utils.loadFile(assetManager, fullPath) != null) {
+        if (Utils.hasFile(assetManager, fullPath)) {
             return fullPath;
         } else {
             while (depth-- >= 0) {
                 fullPath = Utils.joinPath(root, id);
                 root = Utils.joinPath(root, "..");
 
-                if (Utils.loadFile(assetManager, fullPath) != null) {
+                if (Utils.hasFile(assetManager, fullPath)) {
                     return fullPath;
                 }
             }
@@ -138,7 +138,20 @@ public class Utils {
         }
     }
 
-    public static JSUint8Array toUint8Array(JSContext ctx, String string, String encoding) {
+    public static JSUint8Array bytesToUint8Array(JSContext ctx, byte[] bytes) {
+        if (bytes != null) {
+            JSArray<Byte> array = new JSArray<Byte>(ctx, Byte.class);
+
+            for (int i = 0, il = bytes.length; i < il; i++) {
+                array.push(bytes[i]);
+            }
+            return new JSUint8Array(ctx, array);
+        } else {
+            return new JSUint8Array(ctx, 0);
+        }
+    }
+
+    public static JSUint8Array stringToUint8Array(JSContext ctx, String string, String encoding) {
         byte[] bytes = null;
 
         try {
@@ -147,10 +160,6 @@ public class Utils {
             Log.e("Utils", e.toString());
         }
 
-        if (bytes != null) {
-            return new JSUint8Array(ctx, bytes);
-        } else {
-            return new JSUint8Array(ctx, 0);
-        }
+        return bytesToUint8Array(ctx, bytes);
     }
 }
