@@ -6,6 +6,6 @@
   "author": "Nathan Faucett",
   "license": "MIT",
   "dependencies": {
-    "@nathanfaucett/is_null": "0.0.1"
+    "@nathanfaucett/virt": "0.0.3"
   }
 }

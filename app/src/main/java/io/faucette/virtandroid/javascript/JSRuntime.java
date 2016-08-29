@@ -68,6 +68,23 @@ public class JSRuntime extends JSContext {
         }
     }
 
+    public long setTimeout(final JSFunction fn, long delay) {
+        long id = _id++;
+        _eventCallbacks.add(new JSEventCallback(id, fn, delay));
+        return id;
+    }
+
+    public void clearTimeout(final long id) {
+        int index = 0;
+
+        for (JSEventCallback callback : _eventCallbacks) {
+            if (callback.id == id) {
+                _eventCallbacks.remove(index);
+            }
+            index++;
+        }
+    }
+
     private void _init() {
         final JSRuntime _this = this;
 
@@ -79,22 +96,23 @@ public class JSRuntime extends JSContext {
         });
 
         property("console", new JSConsole(this));
+        property("process", new JSProcess(this));
 
         property("setTimeout", new JSFunction(this, "setTimeout") {
             public long setTimeout(final JSFunction fn, final JSValue delay) {
-                return _this._setTimeout(fn, delay.toNumber().longValue());
+                return _this.setTimeout(fn, delay.toNumber().longValue());
             }
         });
 
         property("setImmediate", new JSFunction(this, "setImmediate") {
             public long setImmediate(final JSFunction fn) {
-                return _this._setTimeout(fn, 0);
+                return _this.setTimeout(fn, 0);
             }
         });
 
         property("clearTimeout", new JSFunction(this, "clearTimeout") {
             public void clearTimeout(final long id) {
-                _this._clearTimeout(id);
+                _this.clearTimeout(id);
             }
         });
     }
@@ -104,23 +122,6 @@ public class JSRuntime extends JSContext {
             if (_eventCallbacks.size() > 0) {
                 _handleEventLoop();
             }
-        }
-    }
-
-    private long _setTimeout(final JSFunction fn, long delay) {
-        long id = _id++;
-        _eventCallbacks.add(new JSEventCallback(id, fn, delay));
-        return id;
-    }
-
-    private void _clearTimeout(final long id) {
-        int index = 0;
-
-        for (JSEventCallback callback : _eventCallbacks) {
-            if (callback.id == id) {
-                _eventCallbacks.remove(index);
-            }
-            index++;
         }
     }
 

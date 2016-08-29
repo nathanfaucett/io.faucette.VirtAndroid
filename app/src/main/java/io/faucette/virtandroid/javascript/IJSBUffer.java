@@ -1,0 +1,11 @@
+package io.faucette.virtandroid.javascript;
+
+import org.liquidplayer.webkit.javascriptcore.JSContext;
+import org.liquidplayer.webkit.javascriptcore.JSValue;
+
+/**
+ * Created by nathan on 8/28/16.
+ */
+public interface IJSBUffer {
+    public boolean isBuffer(JSValue buffer);
+}

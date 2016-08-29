@@ -15,6 +15,7 @@ import org.liquidplayer.webkit.javascriptcore.JSObject;
 import org.liquidplayer.webkit.javascriptcore.JSValue;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,30 +27,33 @@ public class JSModule extends JSObject {
     private final static Pattern _reModule = Pattern.compile("(@[^\\\\/]*)?(\\\\|/)?([^\\\\/]*)(.*)?");
 
     private JSModule _root;
+    private HashMap<String, JSModule> _cache;
     private Activity _activity;
     private AssetManager _assetManager;
 
 
-    public JSModule(JSContext context, String id, JSModule parent) {
+    public JSModule(JSContext ctx, String id, JSModule parent) {
 
-        super(context);
+        super(ctx);
 
         if (parent != null) {
             _root = parent._root;
+            _cache = _root._cache;
 
             setActivity(parent._activity);
             parent.property("children").toJSArray().add(this);
         } else {
             _root = this;
+            _cache = new HashMap<>();
         }
 
         property("id", id);
-        property("exports", new JSObject(context));
+        property("exports", new JSObject(ctx));
         property("parent", parent);
 
         property("filename", null);
         property("loaded", false);
-        property("children", new JSArray<JSModule>(context, JSModule.class));
+        property("children", new JSArray<JSModule>(ctx, JSModule.class));
     }
 
     public void setActivity(Activity activity) {
@@ -61,14 +65,32 @@ public class JSModule extends JSObject {
         boolean isNodeModule = Utils.isNodeModule(path);
 
         if (isNodeModule) {
-            return requireModule(path);
+            path = resolveModule(path);
         } else {
-            return requireRelative(path);
+            path = resolveRelative(path);
+        }
+
+        if (path != null) {
+            if (_cache.containsKey(path)) {
+                return _cache.get(path).property("exports");
+            } else {
+                JSModule module = new JSModule(getContext(), path, this);
+                _cache.put(path, module);
+                module.run();
+                return module.property("exports");
+            }
+        } else {
+            throwJSError(
+                    "no " + (isNodeModule ? "node module" : "file") +
+                    " found named " + path + " required from " +
+                    Utils.dirname(property("id").toString())
+            );
+            return null;
         }
     }
 
-    private JSValue requireModule(String path) {
-        String parentFilePath = Utils.dirname(property("id").toString());
+    private String resolveModule(String path) {
+        String parentDirname = Utils.dirname(property("id").toString());
         Matcher matcher = _reModule.matcher(path);
 
         String scopeName = null;
@@ -81,75 +103,79 @@ public class JSModule extends JSObject {
             relativePath = matcher.group(4);
         }
 
+        if (relativePath != null && relativePath.equals("")) {
+            relativePath = null;
+        }
         if (relativePath != null && Utils.isAbsolute(relativePath)) {
             relativePath = relativePath.substring(1);
         }
 
-        if (moduleName == null) {
-            return throwJSError("no node module found named " + path + " required from " + parentFilePath);
-        } else {
-            String pkgFullPath = Utils.findNodeModulePackageJSON(_assetManager, moduleName, parentFilePath);
+        if (moduleName != null) {
+            String pkgFullPath = Utils.findNodeModulePackageJSON(_assetManager, moduleName, parentDirname);
 
             if (pkgFullPath != null) {
                 if (relativePath != null) {
                     String fullPath = Utils.ensureExt(Utils.joinPath(Utils.dirname(pkgFullPath), relativePath));
-                    String contents = Utils.loadFile(_assetManager, fullPath);
 
-                    if (contents != null) {
-                        return runContents(fullPath, contents);
+                    if (Utils.hasFile(_assetManager, fullPath)) {
+                        return fullPath;
                     } else {
-                        return throwJSError("no file found named " + path + " required from " + parentFilePath);
+                        return null;
                     }
                 } else {
                     String contents = Utils.loadFile(_assetManager, pkgFullPath);
 
                     try {
-                        return requirePackageJSON(pkgFullPath, contents);
+                        return resolvePackageJSON(pkgFullPath, contents);
                     } catch (JSONException e) {
-                        return throwJSError("no node module found named " + path + " required from " + parentFilePath + " " + e.toString());
+                        throwJSError(e.toString());
+                        return null;
                     }
                 }
             } else {
-                return throwJSError("no node module found named " + path + " required from " + parentFilePath);
+                return null;
             }
+        } else {
+            return null;
         }
     }
 
-    private JSValue requirePath(String path, String parentFilePath) {
-        String contents = Utils.loadFile(_assetManager, Utils.ensureExt(path));
+    private String resolvePath(String path) {
+        String fullPath = Utils.ensureExt(path);
 
-        if (contents != null) {
-            return runContents(path, contents);
-        } else {
-            String fullPath = Utils.ensureExt(path + File.separatorChar + "index");
-            contents = Utils.loadFile(_assetManager, fullPath);
+        if (!Utils.hasFile(_assetManager, fullPath)) {
+            fullPath = Utils.ensureExt(path + File.separatorChar + "index");
 
-            if (contents != null) {
-                return runContents(fullPath, contents);
-            } else {
+            if (!Utils.hasFile(_assetManager, fullPath)) {
                 fullPath = path + File.separatorChar + "package.json";
-                contents = Utils.loadFile(_assetManager, fullPath);
 
-                if (contents != null) {
+                if (Utils.hasFile(_assetManager, fullPath)) {
+                    String contents = Utils.loadFile(_assetManager, fullPath);
+
                     try {
-                        return requirePackageJSON(fullPath, contents);
+                        return resolvePackageJSON(fullPath, contents);
                     } catch (JSONException e) {
-                        return throwJSError("no file found named " + path + " " + e.toString());
+                        throwJSError(e.toString());
+                        return null;
                     }
                 } else {
-                    return throwJSError("no file found named " + path + " required from " + parentFilePath);
+                    return null;
                 }
+            } else {
+                return fullPath;
             }
+        } else {
+            return fullPath;
         }
     }
 
-    private JSValue requireRelative(String path) {
+    private String resolveRelative(String path) {
         String parentFilePath = Utils.dirname(property("id").toString());
         String joinedPath = Utils.joinPath(parentFilePath, path);
-        return requirePath(joinedPath, parentFilePath);
+        return resolvePath(joinedPath);
     }
 
-    private JSValue requirePackageJSON(String path, String contents) throws JSONException {
+    private String resolvePackageJSON(String path, String contents) throws JSONException {
         JSONObject packageJSON = new JSONObject(contents);
         String index;
 
@@ -161,37 +187,35 @@ public class JSModule extends JSObject {
             index = packageJSON.getString("main");
         }
 
-        return requirePath(Utils.joinPath(Utils.dirname(path), index), Utils.dirname(path));
+        return resolvePath(Utils.joinPath(Utils.dirname(path), index));
     }
 
-    private JSValue runContents(String path, String contents) {
-        JSContext context = getContext();
+    private void run() {
+        final JSModule _this = this;
+        String id = property("id").toString();
+        String contents = Utils.loadFile(_assetManager, id);
+        JSContext ctx = getContext();
 
         JSFunction function = new JSFunction(
-                context,
-                path.replaceAll("[^a-zA-Z0-9-_]+", "_"),
+                ctx,
+                id.replaceAll("[^a-zA-Z0-9]+", "_"),
                 new String[] {"module", "exports", "require"},
                 contents,
-                path,
+                id,
                 1
         );
 
-        final JSModule module = new JSModule(context, path, this);
-
-        JSFunction require = new JSFunction(context, "require") {
+        JSFunction require = new JSFunction(ctx, "require") {
             public JSValue require(JSValue path) {
-                return module.require(path.toString());
+                return _this.require(path.toString());
             }
         };
 
-        function.call(module, module, module.property("exports"), require);
-
-        return module.property("exports");
+        function.call(_this, _this, _this.property("exports"), require);
     }
 
-    private JSValue throwJSError(String message) {
-        JSContext context = getContext();
-        context.throwJSException(new JSException(new JSValue(context, message)));
-        return new JSObject(context);
+    private void throwJSError(String message) {
+        JSContext ctx = getContext();
+        ctx.throwJSException(new JSException(new JSValue(ctx, message)));
     }
 }

@@ -4,8 +4,13 @@ package io.faucette.virtandroid.javascript;
 import android.content.res.AssetManager;
 import android.util.Log;
 
+import org.liquidplayer.webkit.javascriptcore.JSArrayBuffer;
+import org.liquidplayer.webkit.javascriptcore.JSContext;
+import org.liquidplayer.webkit.javascriptcore.JSUint8Array;
+
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Scanner;
@@ -16,6 +21,14 @@ import java.util.Scanner;
  */
 public class Utils {
 
+    public static boolean hasFile(AssetManager assetManager, String path) {
+        try {
+            assetManager.open(Utils.normalize(path));
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
+    }
     public static String loadFile(AssetManager assetManager, String path) {
         String contents = null;
         try {
@@ -113,5 +126,31 @@ public class Utils {
         }
 
         return message;
+    }
+
+    public static String getEncodeing(String encoding) {
+        encoding = encoding.toLowerCase();
+
+        if (encoding.equals("ascii")) {
+            return "US-ASCII";
+        } else {
+            return "UTF-8";
+        }
+    }
+
+    public static JSUint8Array toUint8Array(JSContext ctx, String string, String encoding) {
+        byte[] bytes = null;
+
+        try {
+            bytes = string.getBytes(getEncodeing(encoding));
+        } catch (UnsupportedEncodingException e) {
+            Log.e("Utils", e.toString());
+        }
+
+        if (bytes != null) {
+            return new JSUint8Array(ctx, bytes);
+        } else {
+            return new JSUint8Array(ctx, 0);
+        }
     }
 }
