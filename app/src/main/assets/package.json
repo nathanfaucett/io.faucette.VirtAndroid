@@ -6,6 +6,6 @@
   "author": "Nathan Faucett",
   "license": "MIT",
   "dependencies": {
-    "@nathanfaucett/virt": "0.0.3"
+    "@nathanfaucett/virt-android": "/var/www/html/node/_virt/virt-android"
   }
 }

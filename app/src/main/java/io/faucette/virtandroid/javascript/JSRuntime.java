@@ -18,18 +18,11 @@ import java.util.ArrayList;
  */
 public class JSRuntime extends JSContext {
     private JSModule _rootModule;
-    private final String _initScript = (
-            "var process = {};\n" +
-            "process.nextTick = function(fn) {setImmediate(fn);};\n" +
-            "function Buffer() {}\n" +
-            "Buffer.isBuffer = function() { return false; };"
-    );
 
     private long _id;
     private long _startTime;
 
     private boolean _running;
-    private Thread _thread;
     private ArrayList<JSEventCallback> _eventCallbacks;
 
 
@@ -41,7 +34,7 @@ public class JSRuntime extends JSContext {
         public JSEventCallback(long _id, JSFunction _function, long _ms) {
             id = _id;
             function = _function;
-            ms = _ms > 0 ? _ms : 0;
+            ms = System.currentTimeMillis() + (_ms > 0 ? _ms : 0);
         }
     }
 
@@ -64,17 +57,8 @@ public class JSRuntime extends JSContext {
         _rootModule.setActivity(activity);
     }
 
-    public void start() {
-        if (!_running) {
-            _running = true;
-            _thread.start();
-        }
-    }
-
-    public void stop() {
-        if (_running) {
-            _running = false;
-        }
+    public boolean isRunning() {
+        return _running;
     }
 
     public long setTimeout(final JSFunction fn, long delay) {
@@ -97,17 +81,12 @@ public class JSRuntime extends JSContext {
     private void _init() {
         final JSRuntime _this = this;
 
-        _thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                _this._run();
-            }
-        });
-
         property("global", getThis());
         property("console", new JSConsole(this));
+        property("process", new JSProcess(this));
 
         try {
+            property("Buffer", new JSBuffer(this));
             property("WebSocket", new JSWebSocket(this));
         } catch (NoSuchMethodException e) {
             Log.e("JSRuntime", e.toString());
@@ -130,15 +109,11 @@ public class JSRuntime extends JSContext {
                 _this.clearTimeout(id);
             }
         });
-
-        evaluateScript(_initScript);
     }
 
-    private void _run() {
-        while (_running) {
-            if (_eventCallbacks.size() > 0) {
-                _handleEventLoop();
-            }
+    public void tick() {
+        if (_eventCallbacks.size() > 0) {
+            _handleEventLoop();
         }
     }
 

@@ -18,7 +18,7 @@ import java.net.URISyntaxException;
 /**
  * Created by nathan on 8/28/16.
  */
-public class JSWebSocket extends JSFunction implements IJSWebSocket {
+public class JSWebSocket extends JSFunction {
     public static int CONNECTING = 0;
     public static int OPEN = 1;
     public static int CLOSING = 2;
@@ -27,6 +27,7 @@ public class JSWebSocket extends JSFunction implements IJSWebSocket {
     private URI _uri;
     private WebSocketClient _client;
 
+    /* required by AndroidJSCore */
     public JSWebSocket() {}
 
     public JSWebSocket(JSContext ctx) throws NoSuchMethodException {
@@ -34,10 +35,25 @@ public class JSWebSocket extends JSFunction implements IJSWebSocket {
         super(ctx, JSWebSocket.class.getMethod("constructor", String.class), JSWebSocket.class);
 
         JSObject proto = new JSObject(ctx);
+
         proto.property("CONNECTING", CONNECTING);
         proto.property("OPEN", OPEN);
         proto.property("CLOSING", CLOSING);
         proto.property("CLOSED", CLOSED);
+
+        final JSWebSocket _this = this;
+
+        proto.property("send", new JSFunction(ctx, "send") {
+            public void send(JSValue value) {
+                _this.send(value.toString());
+            }
+        });
+        proto.property("close", new JSFunction(ctx, "close") {
+            public void close() {
+                _this.close();
+            }
+        });
+
         prototype(proto);
     }
 
@@ -129,19 +145,9 @@ public class JSWebSocket extends JSFunction implements IJSWebSocket {
     }
 
     public void close() {
-        close(0, "user");
-    }
-    public void close(int code) {
-        close(code, "user");
-    }
-    public void close(int code, String reason) {
         _client.close();
     }
-
     public void send(String data) {
         _client.send(data);
-    }
-    public void send(JSArrayBuffer data) {
-        _client.send(data.toString());
     }
 }
