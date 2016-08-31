@@ -218,6 +218,7 @@ public class JSModule extends JSObject {
 
     private void throwJSError(String message) {
         JSContext ctx = getContext();
+        Log.e("JSModule", message);
         ctx.throwJSException(new JSException(new JSValue(ctx, message)));
     }
 }

@@ -5,46 +5,29 @@ import android.app.Activity;
 import android.util.Log;
 
 import org.liquidplayer.webkit.javascriptcore.JSContext;
+import org.liquidplayer.webkit.javascriptcore.JSException;
 import org.liquidplayer.webkit.javascriptcore.JSFunction;
-import org.liquidplayer.webkit.javascriptcore.JSObject;
 import org.liquidplayer.webkit.javascriptcore.JSValue;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 
 /**
  * Created by nathan on 8/10/16.
  */
-public class JSRuntime extends JSContext {
+public class JSRuntime extends JSContext implements IJSRuntime {
     private JSModule _rootModule;
 
-    private long _id;
-    private long _startTime;
-
     private boolean _running;
-    private ArrayList<JSEventCallback> _eventCallbacks;
-
-
-    private class JSEventCallback {
-        public long id;
-        public long ms;
-        public JSFunction function;
-
-        public JSEventCallback(long _id, JSFunction _function, long _ms) {
-            id = _id;
-            function = _function;
-            ms = System.currentTimeMillis() + (_ms > 0 ? _ms : 0);
-        }
-    }
+    private ArrayList<JSEventCallback> _timeoutCallbacks;
 
 
     public JSRuntime(Activity activity) {
 
-        super();
+        super(IJSRuntime.class);
 
-        _eventCallbacks = new ArrayList<>();
-        _startTime = System.currentTimeMillis();
+        _running = false;
+        _timeoutCallbacks = new ArrayList<>();
 
         _init();
 
@@ -57,22 +40,39 @@ public class JSRuntime extends JSContext {
         _rootModule.setActivity(activity);
     }
 
+    public void start() {
+        if (!_running) {
+            _running = true;
+
+            while (_running) {
+                tick();
+            }
+        }
+    }
+    public void stop() {
+        if (_running) {
+            _running = false;
+        }
+    }
+
     public boolean isRunning() {
         return _running;
     }
 
-    public long setTimeout(final JSFunction fn, long delay) {
-        long id = _id++;
-        _eventCallbacks.add(new JSEventCallback(id, fn, delay));
-        return id;
+    public long setTimeout(final JSFunction fn, final long delay) {
+        JSEventCallback callback = new JSEventCallback(fn, delay);
+        _timeoutCallbacks.add(callback);
+        return callback.id;
     }
-
+    public long setImmediate(final JSFunction fn) {
+        return setTimeout(fn, 0);
+    }
     public void clearTimeout(final long id) {
         int index = 0;
 
-        for (JSEventCallback callback : _eventCallbacks) {
+        for (JSEventCallback callback : _timeoutCallbacks) {
             if (callback.id == id) {
-                _eventCallbacks.remove(index);
+                _timeoutCallbacks.remove(index);
             }
             index++;
         }
@@ -81,7 +81,14 @@ public class JSRuntime extends JSContext {
     private void _init() {
         final JSRuntime _this = this;
 
-        property("global", getThis());
+        setExceptionHandler(new IJSExceptionHandler() {
+            @Override
+            public void handle(JSException exception) {
+                Log.e("JSRuntime", exception.toString());
+            }
+        });
+
+        property("global", this);
         property("console", new JSConsole(this));
         property("process", new JSProcess(this));
 
@@ -91,40 +98,30 @@ public class JSRuntime extends JSContext {
         } catch (NoSuchMethodException e) {
             Log.e("JSRuntime", e.toString());
         }
-
-        property("setTimeout", new JSFunction(this, "setTimeout") {
-            public long setTimeout(final JSFunction fn, final JSValue delay) {
-                return _this.setTimeout(fn, delay.toNumber().longValue());
-            }
-        });
-
-        property("setImmediate", new JSFunction(this, "setImmediate") {
-            public long setImmediate(final JSFunction fn) {
-                return _this.setTimeout(fn, 0);
-            }
-        });
-
-        property("clearTimeout", new JSFunction(this, "clearTimeout") {
-            public void clearTimeout(final long id) {
-                _this.clearTimeout(id);
-            }
-        });
     }
 
     public void tick() {
-        if (_eventCallbacks.size() > 0) {
+        if (_timeoutCallbacks.size() > 0) {
             _handleEventLoop();
         }
     }
 
     private void _handleEventLoop() {
-        for (int i = _eventCallbacks.size() - 1; i >= 0; i--) {
-            JSEventCallback callback = _eventCallbacks.get(i);
+        final ArrayList<JSEventCallback> timeoutCallbacks = _timeoutCallbacks;
+        final long currentTime = System.currentTimeMillis();
 
-            if (callback.ms <= (System.currentTimeMillis() - _startTime)) {
-                callback.function.call();
-                _eventCallbacks.remove(i);
+        this.sync(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = timeoutCallbacks.size() - 1; i >= 0; i--) {
+                    final JSEventCallback callback = timeoutCallbacks.get(i);
+
+                    if (callback.timeout <= currentTime) {
+                        timeoutCallbacks.remove(i);
+                        callback.function.call();
+                    }
+                }
             }
-        }
+        });
     }
 }

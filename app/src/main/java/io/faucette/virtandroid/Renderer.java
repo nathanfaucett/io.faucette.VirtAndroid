@@ -27,7 +27,6 @@ public class Renderer {
         _messenger.on("virt.handleTransaction", new Callback() {
             @Override
             public void call(JSONObject data, Callback callback) {
-
                 try {
                     _this._applyPatches(data.getJSONObject("patches"));
                     _this._applyEvents(data.getJSONObject("events"));
@@ -36,7 +35,7 @@ public class Renderer {
                     Log.i("Renderer", e.toString());
                 }
 
-                callback.call((JSONObject) null);
+                callback.call(null, (JSONObject) null);
             }
         });
     }
@@ -54,7 +53,6 @@ public class Renderer {
         }
     }
     private void _applyEvents(JSONObject events) {
-
     }
 
     private void _applyPatch(String id, JSONObject patch) throws JSONException {
@@ -64,29 +62,25 @@ public class Renderer {
             _mount(patch.getJSONObject("next"), id);
         } else if (type.equals("UNMOUNT")) {
             // unmount patch
-            Log.i("Renderer", patch + "");
         } else if (type.equals("INSERT")) {
             // insert patch
-            Log.i("Renderer", patch + "");
         } else if (type.equals("REMOVE")) {
             // remove patch
-            Log.i("Renderer", patch + "");
         } else if (type.equals("REPLACE")) {
             // replace patch
-            Log.i("Renderer", patch + "");
         } else if (type.equals("TEXT")) {
-            // text patch
-            Log.i("Renderer", patch + "");
+            _text(patch.getString("next"), patch.getInt("index"), id);
         } else if (type.equals("ORDER")) {
             // order patch
-            Log.i("Renderer", patch + "");
         } else if (type.equals("PROPS")) {
             // props patch
-            Log.i("Renderer", patch + "");
         }
     }
 
     private void _mount(JSONObject next, String id) {
-        Log.i("Renderer", next + ", " + id);
+        Log.i("Renderer", next + " " + id);
+    }
+    private void _text(String text, int index, String id) {
+        Log.i("Renderer", text + " " + index + " " + id);
     }
 }

@@ -1,20 +1,25 @@
-var virtAndroid = require("@nathanfaucett/virt-android");
+var virt = require("@nathanfaucett/virt"),
+    virtAndroid = require("@nathanfaucett/virt-android"),
+    App = require("./App");
 
 
-var virt = virtAndroid.virt,
-    socket = new WebSocket("ws://localhost:9999");
+var socket = new WebSocket("ws://localhost:9999");
 
 
+socket.onmessage = function onMessage(data) {
+    socket.send(data);
+};
+
+
+/*
 socket.onopen = function onOpen() {
     virtAndroid.render(
-        virt.createView("View", {
-            property: "value"
-        }, "Hello, world!"),
+        virt.createView(App),
         function noop() {},
         socket,
         function attachMessage(socket, callback) {
-            socket.onmessage = function onMessage(e) {
-                callback(JSON.parse(e.data));
+            socket.onmessage = function onMessage(data) {
+                callback(JSON.parse(data));
             };
         },
         function sendMessage(socket, data) {
@@ -22,3 +27,4 @@ socket.onopen = function onOpen() {
         }
     );
 };
+*/

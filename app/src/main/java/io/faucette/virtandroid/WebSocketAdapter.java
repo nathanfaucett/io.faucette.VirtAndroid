@@ -1,5 +1,7 @@
 package io.faucette.virtandroid;
 
+import org.json.JSONObject;
+
 import io.faucette.virtandroid.messenger.Adapter;
 import io.faucette.virtandroid.messenger.Callback;
 
