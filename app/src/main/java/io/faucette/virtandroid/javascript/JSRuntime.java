@@ -7,9 +7,10 @@ import android.util.Log;
 import org.liquidplayer.webkit.javascriptcore.JSContext;
 import org.liquidplayer.webkit.javascriptcore.JSException;
 import org.liquidplayer.webkit.javascriptcore.JSFunction;
-import org.liquidplayer.webkit.javascriptcore.JSValue;
 
 import java.util.ArrayList;
+
+import io.faucette.virtandroid.messenger.SimpleAdapter;
 
 
 /**
@@ -19,14 +20,16 @@ public class JSRuntime extends JSContext implements IJSRuntime {
     private JSModule _rootModule;
 
     private boolean _running;
+    private SimpleAdapter _clientSocket;
     private ArrayList<JSEventCallback> _timeoutCallbacks;
 
 
-    public JSRuntime(Activity activity) {
+    public JSRuntime(Activity activity, SimpleAdapter clientSocket) {
 
         super(IJSRuntime.class);
 
         _running = false;
+        _clientSocket = clientSocket;
         _timeoutCallbacks = new ArrayList<>();
 
         _init();
@@ -57,6 +60,10 @@ public class JSRuntime extends JSContext implements IJSRuntime {
 
     public boolean isRunning() {
         return _running;
+    }
+
+    public SimpleAdapter getClientSocket() {
+        return _clientSocket;
     }
 
     public long setTimeout(final JSFunction fn, final long delay) {

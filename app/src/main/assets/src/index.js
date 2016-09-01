@@ -6,12 +6,6 @@ var virt = require("@nathanfaucett/virt"),
 var socket = new WebSocket("ws://localhost:9999");
 
 
-socket.onmessage = function onMessage(data) {
-    socket.send(data);
-};
-
-
-/*
 socket.onopen = function onOpen() {
     virtAndroid.render(
         virt.createView(App),
@@ -27,4 +21,3 @@ socket.onopen = function onOpen() {
         }
     );
 };
-*/

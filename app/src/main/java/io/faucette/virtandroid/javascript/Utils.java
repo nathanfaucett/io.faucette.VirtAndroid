@@ -11,8 +11,14 @@ import org.liquidplayer.webkit.javascriptcore.JSUint8Array;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Scanner;
 
 
@@ -104,62 +110,5 @@ public class Utils {
             }
             return null;
         }
-    }
-
-    public static String arrayToString(Object[] array) {
-        String message = "";
-
-        if (array != null) {
-            Object arg = array[0];
-
-            if (arg != null) {
-                message += arg.toString();
-            }
-
-            for (int i = 1, il = array.length; i < il; i++) {
-                arg = array[i];
-
-                if (arg != null) {
-                    message += ", " + arg.toString();
-                }
-            }
-        }
-
-        return message;
-    }
-
-    public static String getEncodeing(String encoding) {
-        encoding = encoding.toLowerCase();
-
-        if (encoding.equals("ascii")) {
-            return "US-ASCII";
-        } else {
-            return "UTF-8";
-        }
-    }
-
-    public static JSUint8Array bytesToUint8Array(JSContext ctx, byte[] bytes) {
-        if (bytes != null) {
-            JSArray<Byte> array = new JSArray<Byte>(ctx, Byte.class);
-
-            for (int i = 0, il = bytes.length; i < il; i++) {
-                array.push(bytes[i]);
-            }
-            return new JSUint8Array(ctx, array);
-        } else {
-            return new JSUint8Array(ctx, 0);
-        }
-    }
-
-    public static JSUint8Array stringToUint8Array(JSContext ctx, String string, String encoding) {
-        byte[] bytes = null;
-
-        try {
-            bytes = string.getBytes(getEncodeing(encoding));
-        } catch (UnsupportedEncodingException e) {
-            Log.e("Utils", e.toString());
-        }
-
-        return bytesToUint8Array(ctx, bytes);
     }
 }

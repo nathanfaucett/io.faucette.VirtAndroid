@@ -1,7 +1,5 @@
 package io.faucette.virtandroid.javascript;
 
-import android.util.Log;
-
 import org.liquidplayer.webkit.javascriptcore.JSFunction;
 import org.liquidplayer.webkit.javascriptcore.JSObject;
 

@@ -11,6 +11,7 @@ import java.util.Iterator;
 
 import io.faucette.virtandroid.messenger.Callback;
 import io.faucette.virtandroid.messenger.Messenger;
+import io.faucette.virtandroid.messenger.SimpleAdapter;
 
 /**
  * Created by nathan on 8/29/16.
@@ -19,10 +20,10 @@ public class Renderer {
     private Messenger _messenger;
 
 
-    public Renderer(Server server) {
+    public Renderer(SimpleAdapter serverSocket) {
         final Renderer _this = this;
 
-        _messenger = new Messenger(new WebSocketAdapter(server));
+        _messenger = new Messenger(serverSocket);
 
         _messenger.on("virt.handleTransaction", new Callback() {
             @Override
@@ -78,9 +79,9 @@ public class Renderer {
     }
 
     private void _mount(JSONObject next, String id) {
-        Log.i("Renderer", next + " " + id);
+        Log.i("Renderer", "MOUNT " + next + " " + id);
     }
     private void _text(String text, int index, String id) {
-        Log.i("Renderer", text + " " + index + " " + id);
+        Log.i("Renderer", "TEXT " + text + " " + index + " " + id);
     }
 }
