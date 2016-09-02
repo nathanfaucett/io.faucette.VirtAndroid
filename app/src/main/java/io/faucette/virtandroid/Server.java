@@ -1,5 +1,6 @@
 package io.faucette.virtandroid;
 
+import android.os.Looper;
 import android.util.Log;
 
 import io.faucette.virtandroid.messenger.Callback;
@@ -35,11 +36,13 @@ public class Server extends FakeWebSocketServer {
     public void addListener(Callback callback) {
         _callback = callback;
     }
+
     public void handleMessage(String data) {
         _callback.call(data);
     }
+
     public void sendToAll(String data) {
-        for (FakeWebSocket webSocket: getWebSockets()) {
+        for (FakeWebSocket webSocket : getWebSockets()) {
             webSocket.send(data);
         }
     }

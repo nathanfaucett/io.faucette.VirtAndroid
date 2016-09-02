@@ -82,8 +82,8 @@ public class JSModule extends JSObject {
         } else {
             throwJSError(
                     "no " + (isNodeModule ? "node module" : "file") +
-                    " found named " + path + " required from " +
-                    Utils.dirname(property("id").toString())
+                            " found named " + path + " required from " +
+                            Utils.dirname(property("id").toString())
             );
             return null;
         }
@@ -199,7 +199,7 @@ public class JSModule extends JSObject {
         JSFunction function = new JSFunction(
                 ctx,
                 id.replaceAll("[^a-zA-Z0-9]+", "_"),
-                new String[] {"module", "exports", "require"},
+                new String[]{"module", "exports", "require"},
                 contents,
                 id,
                 1

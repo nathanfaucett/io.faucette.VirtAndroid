@@ -5,16 +5,11 @@ package io.faucette.virtandroid.websockets;
  * Created by nathan on 9/1/16.
  */
 public class FakeSocket {
-    public enum Role {
-        SERVER,
-        CLIENT
-    }
-
+    public FakeSocket socket;
+    public IListener listener;
     private long _id;
     private int _port;
     private Role _role;
-    public FakeSocket socket;
-    public IListener listener;
 
     public FakeSocket(long id, int port, Role role) {
         _id = id;
@@ -27,9 +22,11 @@ public class FakeSocket {
     public final long getId() {
         return _id;
     }
+
     public final int getPort() {
         return _port;
     }
+
     public final Role getRole() {
         return _role;
     }
@@ -37,10 +34,17 @@ public class FakeSocket {
     public final void setListener(IListener l) {
         listener = l;
     }
+
     public final void onMessage(String data) {
         listener.call(data);
     }
+
     public final void postMessage(String data) {
         socket.onMessage(data);
+    }
+
+    public enum Role {
+        SERVER,
+        CLIENT
     }
 }

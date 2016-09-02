@@ -67,7 +67,10 @@ public abstract class FakeWebSocketServer {
     }
 
     public abstract void onOpen(FakeWebSocket webSocket);
+
     public abstract void onClose(FakeWebSocket webSocket, boolean remote);
+
     public abstract void onMessage(FakeWebSocket webSocket, String data);
+
     public abstract void onError(FakeWebSocket webSocket, Exception ex);
 }

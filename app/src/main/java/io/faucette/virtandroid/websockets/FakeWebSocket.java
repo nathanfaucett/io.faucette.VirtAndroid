@@ -14,6 +14,7 @@ public class FakeWebSocket {
     public final void send(String data) {
         _socket.postMessage(data);
     }
+
     public final void close() {
         FakeWebSocketImpl.close(_socket.getId(), _socket.getPort(), true);
     }

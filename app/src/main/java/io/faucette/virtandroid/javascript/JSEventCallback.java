@@ -1,11 +1,6 @@
 package io.faucette.virtandroid.javascript;
 
-import android.os.Handler;
-import android.os.Looper;
-
 import org.liquidplayer.webkit.javascriptcore.JSFunction;
-import org.liquidplayer.webkit.javascriptcore.JSObject;
-import org.liquidplayer.webkit.javascriptcore.JSValue;
 
 /**
  * Created by nathan on 8/31/16.

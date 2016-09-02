@@ -29,7 +29,8 @@ public class JSWebSocket extends JSFunction {
     private FakeWebSocketClient _webSocket;
 
     /* required by AndroidJSCore */
-    public JSWebSocket() {}
+    public JSWebSocket() {
+    }
 
     public JSWebSocket(JSRuntime ctx) throws NoSuchMethodException {
 
@@ -60,7 +61,7 @@ public class JSWebSocket extends JSFunction {
         prototype(proto);
     }
 
-    public void constructor(String uriString) {
+    public final void constructor(String uriString) {
         final JSWebSocket _this = this;
         final JSObject _jsThis = getThis();
         JSContext ctx = getContext();
@@ -147,7 +148,7 @@ public class JSWebSocket extends JSFunction {
         }
     }
 
-    public void onOpen(JSObject _jsThis) {
+    public final void onOpen(JSObject _jsThis) {
         JSValue fn = _jsThis.property("onopen");
 
         _jsThis.property("readyState", new JSValue(_runtime, OPEN));
@@ -157,7 +158,7 @@ public class JSWebSocket extends JSFunction {
         }
     }
 
-    public void onMessage(JSObject _jsThis, String data) {
+    public final void onMessage(JSObject _jsThis, String data) {
         JSValue fn = _jsThis.property("onmessage");
 
         if (!fn.isNull()) {
@@ -165,7 +166,7 @@ public class JSWebSocket extends JSFunction {
         }
     }
 
-    public void onClose(JSObject _jsThis, int code, String reason, boolean remote) {
+    public final void onClose(JSObject _jsThis, int code, String reason, boolean remote) {
         JSValue fn = _jsThis.property("onclose");
 
         _jsThis.property("readyState", new JSValue(_runtime, CLOSED));
@@ -180,7 +181,7 @@ public class JSWebSocket extends JSFunction {
         }
     }
 
-    public void onError(JSObject _jsThis, Exception ex) {
+    public final void onError(JSObject _jsThis, Exception ex) {
         JSValue fn = _jsThis.property("onerror");
 
         if (!fn.isNull()) {

@@ -1,7 +1,5 @@
 package io.faucette.virtandroid.javascript;
 
-import android.util.Log;
-
 import org.liquidplayer.webkit.javascriptcore.JSContext;
 import org.liquidplayer.webkit.javascriptcore.JSFunction;
 import org.liquidplayer.webkit.javascriptcore.JSObject;
@@ -13,7 +11,8 @@ import org.liquidplayer.webkit.javascriptcore.JSValue;
 public class JSBuffer extends JSFunction {
 
     /* required by AndroidJSCore */
-    public JSBuffer() {}
+    public JSBuffer() {
+    }
 
     public JSBuffer(JSContext ctx) throws NoSuchMethodException {
 
@@ -30,5 +29,6 @@ public class JSBuffer extends JSFunction {
         prototype(proto);
     }
 
-    public void constructor() {}
+    public void constructor() {
+    }
 }

@@ -34,6 +34,6 @@ AppPrototype.componentDidMount = function() {
 
 AppPrototype.render = function() {
     return (
-        virt.createView("View", this.state.count)
+        virt.createView("TextView", this.state.count)
     );
 };

@@ -1,15 +1,13 @@
 package io.faucette.virtandroid.websockets;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
  * Created by nathan on 9/1/16.
  */
 public class FakeWebSocketImpl {
-    private static long SOCKET_ID = 0;
     private final static HashMap<Integer, FakeWebSocketServer> _servers = new HashMap<>();
-
+    private static long SOCKET_ID = 0;
 
     public final static void listen(FakeWebSocketServer server, int port) throws Exception {
         if (_servers.containsKey(port)) {

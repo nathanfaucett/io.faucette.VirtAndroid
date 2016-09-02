@@ -11,8 +11,6 @@ import org.liquidplayer.webkit.javascriptcore.JSFunction;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import io.faucette.virtandroid.messenger.SimpleAdapter;
-
 
 /**
  * Created by nathan on 8/10/16.
@@ -35,11 +33,11 @@ public class JSRuntime extends JSContext implements IJSRuntime {
         _rootModule.require(".");
     }
 
-    public void setActivity(Activity activity) {
+    public final void setActivity(Activity activity) {
         _rootModule.setActivity(activity);
     }
 
-    public long setTimeout(final JSFunction fn, final long delay) {
+    public final long setTimeout(final JSFunction fn, final long delay) {
         JSEventCallback callback = new JSEventCallback(fn, delay);
 
         _timeoutCallbacks.add(callback);
@@ -50,10 +48,12 @@ public class JSRuntime extends JSContext implements IJSRuntime {
 
         return callback.id;
     }
-    public long setImmediate(final JSFunction fn) {
+
+    public final long setImmediate(final JSFunction fn) {
         return setTimeout(fn, 0);
     }
-    public void clearTimeout(final long id) {
+
+    public final void clearTimeout(final long id) {
         int index = 0;
 
         for (JSEventCallback callback : _timeoutCallbacks) {
@@ -113,13 +113,14 @@ public class JSRuntime extends JSContext implements IJSRuntime {
         }
     }
 
-    public void loop() {
+    public final void loop() {
         while (true) {
             long timeout = _tick();
 
             try {
                 Thread.sleep(timeout);
-            } catch (InterruptedException ex) {}
+            } catch (InterruptedException ex) {
+            }
         }
     }
 }

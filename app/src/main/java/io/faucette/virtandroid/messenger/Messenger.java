@@ -34,14 +34,14 @@ public class Messenger {
             public void call(String data) {
                 try {
                     _this.onMessage(data);
-                } catch(JSONException e) {
+                } catch (JSONException e) {
                     Log.i("Messenger", e.toString());
                 }
             }
         });
     }
 
-    public void onMessage(String data) throws JSONException {
+    public final void onMessage(String data) throws JSONException {
         JSONObject message = new JSONObject(data);
         String id = message.getString("id");
 
@@ -57,10 +57,10 @@ public class Messenger {
                     public void call(JSONObject error, JSONObject data) {
                         adapter.postMessage(
                                 "{" +
-                                        "\"id\": \""+ finalId + "\"," +
-                                        "\"error\": "+ (error != null ? error.toString() : "null") + "," +
-                                        "\"data\": "+ (data != null ? data.toString() : "null") +
-                                "}"
+                                        "\"id\": \"" + finalId + "\"," +
+                                        "\"error\": " + (error != null ? error.toString() : "null") + "," +
+                                        "\"data\": " + (data != null ? data.toString() : "null") +
+                                        "}"
                         );
                     }
                 });
@@ -74,7 +74,7 @@ public class Messenger {
         }
     }
 
-    public void send(String name, JSONObject data, Callback callback) throws JSONException {
+    public final void send(String name, JSONObject data, Callback callback) throws JSONException {
         String id = _id + "." + Integer.toString(_messageId++, 36);
 
         if (callback != null && !_callbacks.containsKey(id)) {
@@ -83,25 +83,26 @@ public class Messenger {
 
         _adapter.postMessage(
                 "{" +
-                        "\"id\": \""+ id +"\"," +
-                        "\"name\": \""+ name +"\"," +
-                        "\"data\": "+ (data != null ? data.toString() : "null") +
-                "}"
+                        "\"id\": \"" + id + "\"," +
+                        "\"name\": \"" + name + "\"," +
+                        "\"data\": " + (data != null ? data.toString() : "null") +
+                        "}"
         );
     }
-    public void send(String name, JSONObject data) throws JSONException {
+
+    public final void send(String name, JSONObject data) throws JSONException {
         String id = _id + "." + Integer.toString(_messageId++, 36);
 
         _adapter.postMessage(
                 "{" +
-                        "\"id\": \""+ id +"\"," +
-                        "\"name\": \""+ name +"\"," +
-                        "\"data\": "+ (data != null ? data.toString() : "null") +
-                "}"
+                        "\"id\": \"" + id + "\"," +
+                        "\"name\": \"" + name + "\"," +
+                        "\"data\": " + (data != null ? data.toString() : "null") +
+                        "}"
         );
     }
 
-    public void on(String name, Callback callback) {
+    public final void on(String name, Callback callback) {
         if (callback != null) {
             ArrayList<Callback> listenerCallbacks;
 
@@ -115,7 +116,8 @@ public class Messenger {
             listenerCallbacks.add(callback);
         }
     }
-    public void off(String name, Callback callback) {
+
+    public final void off(String name, Callback callback) {
         if (callback != null) {
             if (_listeners.containsKey(name) != false) {
                 ArrayList<Callback> listenerCallbacks = _listeners.get(name);
@@ -127,14 +129,6 @@ public class Messenger {
                     }
                 }
             }
-        }
-    }
-
-    private class Index {
-        public int value;
-
-        public Index() {
-            value = 0;
         }
     }
 
@@ -161,5 +155,13 @@ public class Messenger {
 
     private boolean isMatch(String messageId, String id) {
         return messageId.split("\\.")[0] == id;
+    }
+
+    private class Index {
+        public int value;
+
+        public Index() {
+            value = 0;
+        }
     }
 }

@@ -1,7 +1,5 @@
 package io.faucette.virtandroid.websockets;
 
-import android.util.Log;
-
 import java.net.URI;
 
 /**
@@ -38,7 +36,10 @@ public abstract class FakeWebSocketClient {
     }
 
     public abstract void onOpen();
+
     public abstract void onMessage(String data);
+
     public abstract void onClose(boolean remote);
+
     public abstract void onError(Exception ex);
 }

@@ -7,6 +7,8 @@ import org.liquidplayer.webkit.javascriptcore.JSValue;
  */
 public interface IJSConsole {
     public void log(final JSValue value);
+
     public void warn(final JSValue value);
+
     public void error(final JSValue value);
 }
