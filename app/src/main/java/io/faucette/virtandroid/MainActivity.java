@@ -6,23 +6,23 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
 import io.faucette.virtandroid.javascript.JSRuntime;
-import io.faucette.virtandroid.messenger.ServerClient;
-import io.faucette.virtandroid.messenger.SimpleAdapter;
 
 
 public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        final ServerClient serverClient = SimpleAdapter.createServerClient();
         final Activity _this = this;
 
-        Renderer renderer = new Renderer(serverClient.server);
+        Server server = new Server();
+        server.listen(9999);
 
-        Thread thread = new Thread(new Runnable() {
+        Renderer renderer = new Renderer(server);
+
+        final Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                final JSRuntime runtime = new JSRuntime(_this, serverClient.client);
-                runtime.start();
+                final JSRuntime runtime = new JSRuntime(_this);
+                runtime.loop();
             }
         });
         thread.start();

@@ -20,10 +20,10 @@ public class Renderer {
     private Messenger _messenger;
 
 
-    public Renderer(SimpleAdapter serverSocket) {
+    public Renderer(Server server) {
         final Renderer _this = this;
 
-        _messenger = new Messenger(serverSocket);
+        _messenger = new Messenger(new WebSocketAdapter(server));
 
         _messenger.on("virt.handleTransaction", new Callback() {
             @Override
@@ -79,9 +79,9 @@ public class Renderer {
     }
 
     private void _mount(JSONObject next, String id) {
-        Log.i("Renderer", "MOUNT " + next + " " + id);
+        Log.i("Renderer", "MOUNT next: " + next + " id: " + id);
     }
     private void _text(String text, int index, String id) {
-        Log.i("Renderer", "TEXT " + text + " " + index + " " + id);
+        Log.i("Renderer", "TEXT next: " + text + " child index: " + index + " id: " + id);
     }
 }

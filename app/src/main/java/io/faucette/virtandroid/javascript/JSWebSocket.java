@@ -11,8 +11,7 @@ import org.liquidplayer.webkit.javascriptcore.JSValue;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import io.faucette.virtandroid.messenger.Callback;
-import io.faucette.virtandroid.messenger.SimpleAdapter;
+import io.faucette.virtandroid.websockets.FakeWebSocketClient;
 
 
 /**
@@ -27,7 +26,7 @@ public class JSWebSocket extends JSFunction {
     private JSRuntime _runtime;
 
     private URI _uri;
-    private SimpleAdapter _socket;
+    private FakeWebSocketClient _webSocket;
 
     /* required by AndroidJSCore */
     public JSWebSocket() {}
@@ -49,7 +48,7 @@ public class JSWebSocket extends JSFunction {
 
         proto.property("send", new JSFunction(ctx, "send") {
             public void send(JSValue value) {
-                _socket.postMessage(value.toString());
+                _webSocket.send(value.toString());
             }
         });
         proto.property("close", new JSFunction(ctx, "close") {
@@ -88,23 +87,64 @@ public class JSWebSocket extends JSFunction {
         _jsThis.property("readyState", new JSValue(ctx, CONNECTING));
         _jsThis.property("url", new JSValue(ctx, url));
 
-        _socket = _runtime.getClientSocket();
-        _socket.addMessageListener(new Callback() {
+        _webSocket = new FakeWebSocketClient(_uri) {
             @Override
-            public void call(final String data) {
+            public void onOpen() {
+
+                Log.i("JSWebSocket", "Open");
+
                 _runtime.setImmediate(new JSFunction(_runtime, "onOpen") {
                     public void onOpen() {
+                        _this.onOpen(_jsThis);
+                    }
+                });
+            }
+
+            @Override
+            public void onMessage(final String data) {
+                _runtime.setImmediate(new JSFunction(_runtime, "onMessage") {
+                    public void onMessage() {
                         _this.onMessage(_jsThis, data);
                     }
                 });
             }
-        });
 
-        _runtime.setImmediate(new JSFunction(_runtime, "onOpen") {
-            public void onOpen() {
-                _this.onOpen(_jsThis);
+            @Override
+            public void onClose(final boolean remote) {
+
+                Log.i("JSWebSocket", "Close remote: " + remote);
+
+                _runtime.setImmediate(new JSFunction(_runtime, "onClose") {
+                    public void onClose() {
+                        _this.onClose(_jsThis, 0, "unknown", remote);
+                    }
+                });
             }
-        });
+
+            @Override
+            public void onError(final Exception ex) {
+
+                Log.e("JSWebSocket", "Error " + ex.toString());
+
+                _runtime.setImmediate(new JSFunction(_runtime, "onError") {
+                    public void onError() {
+                        _this.onError(_jsThis, ex);
+                    }
+                });
+            }
+        };
+
+
+        try {
+            _webSocket.connect();
+        } catch (final Exception ex) {
+            Log.e("JSWebSocket", ex.toString());
+            _runtime.setImmediate(new JSFunction(_runtime, "onError") {
+                public void onError() {
+                    _this.onError(_jsThis, ex);
+                }
+            });
+        }
     }
 
     public void onOpen(JSObject _jsThis) {

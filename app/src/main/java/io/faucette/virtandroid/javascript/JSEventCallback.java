@@ -10,7 +10,7 @@ import org.liquidplayer.webkit.javascriptcore.JSValue;
 /**
  * Created by nathan on 8/31/16.
  */
-public class JSEventCallback {
+public class JSEventCallback implements Comparable<JSEventCallback> {
     private static long ID = 0;
 
     public long id;
@@ -27,5 +27,10 @@ public class JSEventCallback {
         id = ID++;
         function = callback;
         timeout = 0;
+    }
+
+    @Override
+    public int compareTo(JSEventCallback other) {
+        return (int) (timeout - other.timeout);
     }
 }

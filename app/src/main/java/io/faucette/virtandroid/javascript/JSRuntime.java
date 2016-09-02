@@ -9,6 +9,7 @@ import org.liquidplayer.webkit.javascriptcore.JSException;
 import org.liquidplayer.webkit.javascriptcore.JSFunction;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import io.faucette.virtandroid.messenger.SimpleAdapter;
 
@@ -18,18 +19,13 @@ import io.faucette.virtandroid.messenger.SimpleAdapter;
  */
 public class JSRuntime extends JSContext implements IJSRuntime {
     private JSModule _rootModule;
-
-    private boolean _running;
-    private SimpleAdapter _clientSocket;
     private ArrayList<JSEventCallback> _timeoutCallbacks;
 
 
-    public JSRuntime(Activity activity, SimpleAdapter clientSocket) {
+    public JSRuntime(Activity activity) {
 
         super(IJSRuntime.class);
 
-        _running = false;
-        _clientSocket = clientSocket;
         _timeoutCallbacks = new ArrayList<>();
 
         _init();
@@ -43,32 +39,15 @@ public class JSRuntime extends JSContext implements IJSRuntime {
         _rootModule.setActivity(activity);
     }
 
-    public void start() {
-        if (!_running) {
-            _running = true;
-
-            while (_running) {
-                tick();
-            }
-        }
-    }
-    public void stop() {
-        if (_running) {
-            _running = false;
-        }
-    }
-
-    public boolean isRunning() {
-        return _running;
-    }
-
-    public SimpleAdapter getClientSocket() {
-        return _clientSocket;
-    }
-
     public long setTimeout(final JSFunction fn, final long delay) {
         JSEventCallback callback = new JSEventCallback(fn, delay);
+
         _timeoutCallbacks.add(callback);
+        Collections.sort(_timeoutCallbacks);
+
+        // force a tick of the event loop
+        Thread.currentThread().interrupt();
+
         return callback.id;
     }
     public long setImmediate(final JSFunction fn) {
@@ -80,6 +59,7 @@ public class JSRuntime extends JSContext implements IJSRuntime {
         for (JSEventCallback callback : _timeoutCallbacks) {
             if (callback.id == id) {
                 _timeoutCallbacks.remove(index);
+                break;
             }
             index++;
         }
@@ -107,28 +87,39 @@ public class JSRuntime extends JSContext implements IJSRuntime {
         }
     }
 
-    public void tick() {
-        if (_timeoutCallbacks.size() > 0) {
-            _handleEventLoop();
+    private long _tick() {
+        final ArrayList<JSEventCallback> _callbacks = new ArrayList<>();
+        final long currentTime = System.currentTimeMillis();
+
+        while (_timeoutCallbacks.size() > 0 && _timeoutCallbacks.get(0).timeout <= currentTime) {
+            _callbacks.add(_timeoutCallbacks.remove(0));
+        }
+
+        if (_callbacks.size() != 0) {
+            this.sync(new Runnable() {
+                @Override
+                public void run() {
+                    for (JSEventCallback callback : _callbacks) {
+                        callback.function.call(null);
+                    }
+                }
+            });
+        }
+
+        if (_timeoutCallbacks.size() == 0) {
+            return Long.MAX_VALUE; // sleep forever
+        } else {
+            return _timeoutCallbacks.get(0).timeout - currentTime;
         }
     }
 
-    private void _handleEventLoop() {
-        final ArrayList<JSEventCallback> timeoutCallbacks = _timeoutCallbacks;
-        final long currentTime = System.currentTimeMillis();
+    public void loop() {
+        while (true) {
+            long timeout = _tick();
 
-        this.sync(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = timeoutCallbacks.size() - 1; i >= 0; i--) {
-                    final JSEventCallback callback = timeoutCallbacks.get(i);
-
-                    if (callback.timeout <= currentTime) {
-                        timeoutCallbacks.remove(i);
-                        callback.function.call();
-                    }
-                }
-            }
-        });
+            try {
+                Thread.sleep(timeout);
+            } catch (InterruptedException ex) {}
+        }
     }
 }
