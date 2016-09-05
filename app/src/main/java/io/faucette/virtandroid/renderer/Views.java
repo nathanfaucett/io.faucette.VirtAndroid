@@ -2,7 +2,9 @@ package io.faucette.virtandroid.renderer;
 
 
 import android.content.Context;
+import android.os.Build;
 import android.util.Log;
+import android.util.Property;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -16,17 +18,34 @@ import org.json.JSONObject;
 
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.crypto.Mac;
 
 
 /**
  * Created by nathan on 9/1/16.
  */
 public class Views {
+    private static final Pattern re4Ints = Pattern.compile("([0-9]+)[^0-9]+([0-9]+)[^0-9]+([0-9]+)[^0-9]+([0-9]+)");
+
     private static final HashMap<String, View> _views = new HashMap<>();
+    private static final HashMap<String, PropertySetter> _properties = new HashMap<>();
     private static final HashMap<String, Class<? extends View>> _viewClasses = new HashMap<>();
+
 
     public static final View getViewById(String id) {
         return _views.get(id);
+    }
+
+    public static final void setPropertySetter(String prop, PropertySetter setter) throws Exception {
+        if (_properties.containsKey(prop)) {
+            throw new Exception("PropertySetter " + prop + " already added");
+        } else {
+            _properties.put(prop, setter);
+        }
     }
 
     public static final void addViewClass(String type, Class<? extends View> view) throws Exception {
@@ -58,11 +77,61 @@ public class Views {
         addViewClass("Button", Button.class);
         addViewClass("LinearLayout", LinearLayout.class);
         addViewClass("RelativeLayout", RelativeLayout.class);
+
+        setPropertySetter("layout_width", new PropertySetter() {
+            @Override
+            public void set(View view, JSONObject props, String prop) throws Exception {
+                Properties.setLayoutWidth(view, props, prop);
+            }
+        });
+        setPropertySetter("layout_height", new PropertySetter() {
+            @Override
+            public void set(View view, JSONObject props, String prop) throws Exception {
+                Properties.setLayoutHeight(view, props, prop);
+            }
+        });
+
+        setPropertySetter("padding", new PropertySetter() {
+            @Override
+            public void set(View view, JSONObject props, String prop) throws Exception {
+                Properties.setPadding(view, props, prop);
+            }
+        });
+        setPropertySetter("z", new PropertySetter() {
+            @Override
+            public void set(View view, JSONObject props, String prop) throws Exception {
+                Properties.setZ(view, props, prop);
+            }
+        });
+
+        setPropertySetter("alpha", new PropertySetter() {
+            @Override
+            public void set(View view, JSONObject props, String prop) throws Exception {
+                Properties.setAlpha(view, props, prop);
+            }
+        });
+        setPropertySetter("background_color", new PropertySetter() {
+            @Override
+            public void set(View view, JSONObject props, String prop) throws Exception {
+                Properties.setBackgroundColor(view, props, prop);
+            }
+        });
+    }
+
+    public static final void setProps(View view, JSONObject props) throws Exception {
+        Iterator<String> it = props.keys();
+
+        while (it.hasNext()) {
+            String prop = it.next();
+
+            if (!props.isNull(prop) && _properties.containsKey(prop)) {
+                PropertySetter setter = _properties.get(prop);
+                setter.set(view, props, prop);
+            }
+        }
     }
 
     public static final View createFromJSON(Context context, JSONObject view, JSONObject parentProps, String id) throws Exception {
-        Log.i("Views", id);
-
         String type = view.getString("type");
         JSONObject props = view.getJSONObject("props");
         JSONArray children = view.getJSONArray("children");
@@ -77,18 +146,16 @@ public class Views {
         }
 
         if (viewChildren != null) {
-            viewChildren.setTag(id);
+            setProps(viewChildren, props);
             _addJSONChildren(context, viewChildren, props, id, children);
             return viewChildren;
         } else {
-            viewNoChildren.setTag(id);
+            setProps(viewNoChildren, props);
             return viewNoChildren;
         }
     }
 
     public static final View createFromJSON(Context context, String view, JSONObject parentProps, String id) throws Exception {
-
-        Log.i("Views", id);
 
         TextView textView = (TextView) create(context, "TextView", id);
         textView.setText(view);
@@ -97,9 +164,6 @@ public class Views {
     }
 
     public static final View createFromJSON(Context context, Number view, JSONObject parentProps, String id) throws Exception {
-
-        Log.i("Views", id);
-
         return createFromJSON(context, view.toString(), parentProps, id);
     }
 

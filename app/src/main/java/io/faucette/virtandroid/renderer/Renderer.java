@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,6 +28,7 @@ public class Renderer {
     private Activity _activity;
     private Context _context;
     private Messenger _messenger;
+
 
     public Renderer(final Activity activity, ViewGroup root, Server server) {
         final Renderer _this = this;
@@ -117,7 +119,14 @@ public class Renderer {
     }
 
     private void _text(String text, int index, String id) throws Exception {
-        TextView view = (TextView) Views.getViewById(id);
-        view.setText(text);
+        View view = Views.getViewById(id);
+
+        if (view instanceof TextView) {
+            ((TextView) view).setText(text);
+        } else if (view instanceof ViewGroup){
+            ViewGroup viewGroup = (ViewGroup) view;
+            TextView textView = (TextView) viewGroup.getChildAt(index);
+            textView.setText(text);
+        }
     }
 }

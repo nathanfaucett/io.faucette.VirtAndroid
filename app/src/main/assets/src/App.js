@@ -34,8 +34,11 @@ AppPrototype.componentDidMount = function() {
 
 AppPrototype.render = function() {
     return (
-        virt.createView("LinearLayout",
-            virt.createView("TextView", this.state.count)
+        virt.createView("LinearLayout", {
+                background_color: 0xFFFF0000,
+                padding: "64, 32, 32, 64"
+            },
+            this.state.count
         )
     );
 };
