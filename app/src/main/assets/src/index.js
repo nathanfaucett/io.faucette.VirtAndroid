@@ -9,11 +9,11 @@ var socket = new WebSocket("ws://localhost:9999");
 socket.onopen = function onOpen() {
     virtAndroid.render(
         virt.createView(App),
-        function noop() {},
+        function onFirstRender() {},
         socket,
         function attachMessage(socket, callback) {
-            socket.onmessage = function onMessage(data) {
-                callback(JSON.parse(data));
+            socket.onmessage = function onMessage(e) {
+                callback(JSON.parse(e.data));
             };
         },
         function sendMessage(socket, data) {

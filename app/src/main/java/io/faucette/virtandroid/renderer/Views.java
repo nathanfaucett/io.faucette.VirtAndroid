@@ -2,12 +2,16 @@ package io.faucette.virtandroid.renderer;
 
 
 import android.content.Context;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.reflect.Constructor;
@@ -25,16 +29,17 @@ public class Views {
         return _views.get(id);
     }
 
-    public static final void addView(String type, Class<? extends View> view) throws Exception {
+    public static final void addViewClass(String type, Class<? extends View> view) throws Exception {
         if (_viewClasses.containsKey(type)) {
             throw new Exception("View " + type + " already added");
         } else {
             _viewClasses.put(type, view);
         }
     }
+
     public static final Class<? extends View> getViewClass(String type) throws Exception {
         if (!_viewClasses.containsKey(type)) {
-            throw new Exception("View " + type + " does not exists, add it with Views.addView(String type, Class<? extends View> view)");
+            throw new Exception("View " + type + " does not exists, add it with Views.addViewClass(String type, Class<? extends View> view)");
         } else {
             return _viewClasses.get(type);
         }
@@ -49,12 +54,15 @@ public class Views {
     }
 
     public static final void init() throws Exception {
-        addView("ViewGroup", ViewGroup.class);
-        addView("TextView", TextView.class);
-        addView("Button", Button.class);
+        addViewClass("TextView", TextView.class);
+        addViewClass("Button", Button.class);
+        addViewClass("LinearLayout", LinearLayout.class);
+        addViewClass("RelativeLayout", RelativeLayout.class);
     }
 
     public static final View createFromJSON(Context context, JSONObject view, JSONObject parentProps, String id) throws Exception {
+        Log.i("Views", id);
+
         String type = view.getString("type");
         JSONObject props = view.getJSONObject("props");
         JSONArray children = view.getJSONArray("children");
@@ -77,14 +85,21 @@ public class Views {
             return viewNoChildren;
         }
     }
+
     public static final View createFromJSON(Context context, String view, JSONObject parentProps, String id) throws Exception {
+
+        Log.i("Views", id);
 
         TextView textView = (TextView) create(context, "TextView", id);
         textView.setText(view);
 
         return textView;
     }
+
     public static final View createFromJSON(Context context, Number view, JSONObject parentProps, String id) throws Exception {
+
+        Log.i("Views", id);
+
         return createFromJSON(context, view.toString(), parentProps, id);
     }
 
@@ -93,12 +108,25 @@ public class Views {
             Object child = children.get(i);
 
             if (child instanceof JSONObject) {
-                view.addView(createFromJSON(context, (JSONObject) child, props, id));
+                JSONObject jsonChild = (JSONObject) child;
+                view.addView(createFromJSON(context, jsonChild, props, id + "." + _getViewKey(jsonChild, i)));
             } else if (child instanceof Number) {
-                view.addView(createFromJSON(context, (Number) child, props, id));
+                view.addView(createFromJSON(context, (Number) child, props, id + "." + i));
             } else {
-                view.addView(createFromJSON(context, (String) child, props, id));
+                view.addView(createFromJSON(context, (String) child, props, id + "." + i));
             }
+        }
+    }
+
+    private static String _getViewKey(JSONObject view, int index) {
+        if (!view.isNull("key")) {
+            try {
+                return view.getString("key").replace("\\.", "$");
+            } catch (JSONException e) {
+                return index + "";
+            }
+        } else {
+            return index + "";
         }
     }
 }

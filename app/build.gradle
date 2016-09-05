@@ -24,4 +24,5 @@ dependencies {
     testCompile "junit:junit:4.12"
     compile "com.android.support:appcompat-v7:24.+"
     compile "com.github.ericwlange:AndroidJSCore:3.0.1"
+    compile "com.github.nathanfaucett:io.faucette.messenger:0.0.1"
 }

@@ -7,6 +7,7 @@ import android.util.Log;
 import org.liquidplayer.webkit.javascriptcore.JSContext;
 import org.liquidplayer.webkit.javascriptcore.JSException;
 import org.liquidplayer.webkit.javascriptcore.JSFunction;
+import org.liquidplayer.webkit.javascriptcore.JSObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,6 +17,14 @@ import java.util.Collections;
  * Created by nathan on 8/10/16.
  */
 public class JSRuntime extends JSContext implements IJSRuntime {
+    public JSObject global;
+    public JSObject console;
+    public JSObject process;
+    public JSEvent Event;
+    public JSEventTarget EventTarget;
+    public JSBuffer Buffer;
+    public JSWebSocket WebSocket;
+    public JSXMLHttpRequest XMLHttpRequest;
     private JSModule _rootModule;
     private ArrayList<JSEventCallback> _timeoutCallbacks;
 
@@ -75,16 +84,29 @@ public class JSRuntime extends JSContext implements IJSRuntime {
             }
         });
 
-        property("global", this);
-        property("console", new JSConsole(this));
-        property("process", new JSProcess(this));
+        global = this;
+        console = new JSConsole(this);
+        process = new JSProcess(this);
 
         try {
-            property("Buffer", new JSBuffer(this));
-            property("WebSocket", new JSWebSocket(this));
+            Event = new JSEvent(this);
+            EventTarget = new JSEventTarget(this);
+            Buffer = new JSBuffer(this);
+            WebSocket = new JSWebSocket(this);
+            XMLHttpRequest = new JSXMLHttpRequest(this);
         } catch (NoSuchMethodException e) {
             Log.e("JSRuntime", e.toString());
         }
+
+        property("global", global);
+        property("console", console);
+        property("process", process);
+
+        property("Event", Event);
+        property("EventTarget", EventTarget);
+        property("Buffer", Buffer);
+        property("WebSocket", WebSocket);
+        property("XMLHttpRequest", XMLHttpRequest);
     }
 
     private long _tick() {

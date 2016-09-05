@@ -14,10 +14,10 @@ import org.json.JSONObject;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.faucette.virtandroid.Server;
-import io.faucette.virtandroid.WebSocketAdapter;
 import io.faucette.messenger.Callback;
 import io.faucette.messenger.Messenger;
+import io.faucette.virtandroid.Server;
+import io.faucette.virtandroid.WebSocketAdapter;
 
 /**
  * Created by nathan on 8/29/16.
@@ -49,7 +49,7 @@ public class Renderer {
                             _this._applyEvents(data.getJSONObject("events"));
                             _this._applyPatches(data.getJSONObject("removes"));
                         } catch (Exception e) {
-                            Log.i("Renderer", e.toString());
+                            e.printStackTrace();
                         }
 
                         synchronized (this) {
@@ -65,7 +65,8 @@ public class Renderer {
                     while (!done.get()) {
                         try {
                             runnable.wait();
-                        } catch (InterruptedException e) {}
+                        } catch (InterruptedException e) {
+                        }
                     }
                 }
             }
@@ -111,8 +112,8 @@ public class Renderer {
     }
 
     private void _mount(JSONObject next, String id) throws Exception {
-        View view = Views.createFromJSON(_context, next, null, id);
-        _root.addView(view);
+        _root.removeAllViews();
+        _root.addView(Views.createFromJSON(_context, next, null, id));
     }
 
     private void _text(String text, int index, String id) throws Exception {

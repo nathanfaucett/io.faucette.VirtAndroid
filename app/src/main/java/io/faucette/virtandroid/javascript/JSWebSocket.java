@@ -3,7 +3,6 @@ package io.faucette.virtandroid.javascript;
 import android.util.Log;
 
 import org.liquidplayer.webkit.javascriptcore.JSContext;
-import org.liquidplayer.webkit.javascriptcore.JSError;
 import org.liquidplayer.webkit.javascriptcore.JSFunction;
 import org.liquidplayer.webkit.javascriptcore.JSObject;
 import org.liquidplayer.webkit.javascriptcore.JSValue;
@@ -17,7 +16,7 @@ import io.faucette.virtandroid.websockets.FakeWebSocketClient;
 /**
  * Created by nathan on 8/28/16.
  */
-public class JSWebSocket extends JSFunction {
+public class JSWebSocket extends JSEventTarget {
     public static int CONNECTING = 0;
     public static int OPEN = 1;
     public static int CLOSING = 2;
@@ -33,35 +32,14 @@ public class JSWebSocket extends JSFunction {
     }
 
     public JSWebSocket(JSRuntime ctx) throws NoSuchMethodException {
-
         super(ctx, JSWebSocket.class.getMethod("constructor", String.class), JSWebSocket.class);
-
         _runtime = ctx;
-
-        JSObject proto = new JSObject(ctx);
-
-        proto.property("CONNECTING", CONNECTING);
-        proto.property("OPEN", OPEN);
-        proto.property("CLOSING", CLOSING);
-        proto.property("CLOSED", CLOSED);
-
-        final JSWebSocket _this = this;
-
-        proto.property("send", new JSFunction(ctx, "send") {
-            public void send(JSValue value) {
-                _webSocket.send(value.toString());
-            }
-        });
-        proto.property("close", new JSFunction(ctx, "close") {
-            public void close() {
-                getThis().property("readyState", new JSValue(_runtime, CLOSING));
-            }
-        });
-
-        prototype(proto);
     }
 
-    public final void constructor(String uriString) {
+    public void constructor(String uriString) {
+
+        super.constructor();
+
         final JSWebSocket _this = this;
         final JSObject _jsThis = getThis();
         JSContext ctx = getContext();
@@ -88,12 +66,12 @@ public class JSWebSocket extends JSFunction {
         _jsThis.property("readyState", new JSValue(ctx, CONNECTING));
         _jsThis.property("url", new JSValue(ctx, url));
 
+        createPrototype(_jsThis);
+
         _webSocket = new FakeWebSocketClient(_uri) {
             @Override
             public void onOpen() {
-
                 Log.i("JSWebSocket", "Open");
-
                 _runtime.setImmediate(new JSFunction(_runtime, "onOpen") {
                     public void onOpen() {
                         _this.onOpen(_jsThis);
@@ -112,9 +90,7 @@ public class JSWebSocket extends JSFunction {
 
             @Override
             public void onClose(final boolean remote) {
-
                 Log.i("JSWebSocket", "Close remote: " + remote);
-
                 _runtime.setImmediate(new JSFunction(_runtime, "onClose") {
                     public void onClose() {
                         _this.onClose(_jsThis, 0, "unknown", remote);
@@ -124,9 +100,7 @@ public class JSWebSocket extends JSFunction {
 
             @Override
             public void onError(final Exception ex) {
-
                 Log.e("JSWebSocket", "Error " + ex.toString());
-
                 _runtime.setImmediate(new JSFunction(_runtime, "onError") {
                     public void onError() {
                         _this.onError(_jsThis, ex);
@@ -148,44 +122,85 @@ public class JSWebSocket extends JSFunction {
         }
     }
 
+    public JSObject createPrototype(JSObject proto) {
+        JSContext ctx = getContext();
+        super.createPrototype(proto);
+
+        proto.property("CONNECTING", CONNECTING);
+        proto.property("OPEN", OPEN);
+        proto.property("CLOSING", CLOSING);
+        proto.property("CLOSED", CLOSED);
+
+        final JSWebSocket _this = this;
+
+        proto.property("send", new JSFunction(ctx, "send") {
+            public void send(JSValue value) {
+                _webSocket.send(value.toString());
+            }
+        });
+        proto.property("close", new JSFunction(ctx, "close") {
+            public void close() {
+                getThis().property("readyState", new JSValue(_runtime, CLOSING));
+            }
+        });
+
+        return proto;
+    }
+
     public final void onOpen(JSObject _jsThis) {
         JSValue fn = _jsThis.property("onopen");
+
+        JSEvent event = (JSEvent) _runtime.Event.newInstance("open");
 
         _jsThis.property("readyState", new JSValue(_runtime, OPEN));
 
         if (!fn.isNull()) {
-            fn.toFunction().call(_jsThis);
+            fn.toFunction().call(_jsThis, event);
         }
+
+        dispatchEvent(_jsThis, event);
     }
 
     public final void onMessage(JSObject _jsThis, String data) {
         JSValue fn = _jsThis.property("onmessage");
 
+        JSEvent event = (JSEvent) _runtime.Event.newInstance("message");
+        event.property("data", data);
+
         if (!fn.isNull()) {
-            fn.toFunction().call(_jsThis, new JSValue(_jsThis.getContext(), data));
+            fn.toFunction().call(_jsThis, event);
         }
+
+        dispatchEvent(_jsThis, event);
     }
 
     public final void onClose(JSObject _jsThis, int code, String reason, boolean remote) {
         JSValue fn = _jsThis.property("onclose");
 
+        JSEvent event = (JSEvent) _runtime.Event.newInstance("close");
+        event.property("code", code);
+        event.property("reason", reason);
+        event.property("remote", remote);
+
         _jsThis.property("readyState", new JSValue(_runtime, CLOSED));
 
         if (!fn.isNull()) {
-            JSContext ctx = _jsThis.getContext();
-            fn.toFunction().call(_jsThis,
-                    new JSValue(ctx, code),
-                    new JSValue(ctx, reason),
-                    new JSValue(ctx, remote)
-            );
+            fn.toFunction().call(_jsThis, event);
         }
+
+        dispatchEvent(_jsThis, event);
     }
 
     public final void onError(JSObject _jsThis, Exception ex) {
         JSValue fn = _jsThis.property("onerror");
 
+        JSEvent event = (JSEvent) _runtime.Event.newInstance("error");
+        event.property("data", ex.getMessage());
+
         if (!fn.isNull()) {
-            fn.toFunction().call(_jsThis, new JSError(_jsThis.getContext(), ex.getMessage()));
+            fn.toFunction().call(_jsThis, event);
         }
+
+        dispatchEvent(_jsThis, event);
     }
 }

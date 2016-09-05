@@ -34,6 +34,8 @@ AppPrototype.componentDidMount = function() {
 
 AppPrototype.render = function() {
     return (
-        virt.createView("TextView", this.state.count)
+        virt.createView("LinearLayout",
+            virt.createView("TextView", this.state.count)
+        )
     );
 };
