@@ -1,9 +1,9 @@
 package io.faucette.virtandroid;
 
-import android.os.Looper;
+
 import android.util.Log;
 
-import io.faucette.virtandroid.messenger.Callback;
+import io.faucette.messenger.Callback;
 import io.faucette.virtandroid.websockets.FakeWebSocket;
 import io.faucette.virtandroid.websockets.FakeWebSocketServer;
 

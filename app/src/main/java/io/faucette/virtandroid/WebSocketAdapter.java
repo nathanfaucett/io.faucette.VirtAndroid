@@ -2,10 +2,10 @@ package io.faucette.virtandroid;
 
 
 import android.app.Activity;
-import android.util.Log;
 
-import io.faucette.virtandroid.messenger.Adapter;
-import io.faucette.virtandroid.messenger.Callback;
+import io.faucette.messenger.Adapter;
+import io.faucette.messenger.Callback;
+
 
 /**
  * Created by nathan on 8/29/16.

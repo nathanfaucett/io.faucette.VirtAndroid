@@ -9,16 +9,15 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.faucette.virtandroid.Server;
 import io.faucette.virtandroid.WebSocketAdapter;
-import io.faucette.virtandroid.messenger.Callback;
-import io.faucette.virtandroid.messenger.Messenger;
+import io.faucette.messenger.Callback;
+import io.faucette.messenger.Messenger;
 
 /**
  * Created by nathan on 8/29/16.
@@ -28,7 +27,6 @@ public class Renderer {
     private Activity _activity;
     private Context _context;
     private Messenger _messenger;
-
 
     public Renderer(final Activity activity, ViewGroup root, Server server) {
         final Renderer _this = this;
@@ -40,8 +38,10 @@ public class Renderer {
 
         _messenger.on("virt.handleTransaction", new Callback() {
             @Override
-            public void call(final JSONObject data, final Callback callback) {
-                activity.runOnUiThread(new Runnable() {
+            public void call(final JSONObject data) {
+                final AtomicBoolean done = new AtomicBoolean(false);
+
+                Runnable runnable = new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -51,9 +51,23 @@ public class Renderer {
                         } catch (Exception e) {
                             Log.i("Renderer", e.toString());
                         }
+
+                        synchronized (this) {
+                            notifyAll();
+                            done.set(true);
+                        }
                     }
-                });
-                callback.call(null, (JSONObject) null);
+                };
+
+                activity.runOnUiThread(runnable);
+
+                synchronized (runnable) {
+                    while (!done.get()) {
+                        try {
+                            runnable.wait();
+                        } catch (InterruptedException e) {}
+                    }
+                }
             }
         });
     }
