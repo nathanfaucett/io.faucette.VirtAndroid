@@ -7,9 +7,9 @@ import org.liquidplayer.webkit.javascriptcore.JSFunction;
  */
 public interface IJSRuntime {
 
-    public long setTimeout(final JSFunction fn, final long delay);
+    long setTimeout(final JSFunction fn, final long delay);
 
-    public long setImmediate(final JSFunction fn);
+    long setImmediate(final JSFunction fn);
 
-    public void clearTimeout(final long id);
+    void clearTimeout(final long id);
 }

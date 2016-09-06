@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.faucette.virtandroid.Utils;
+
 
 /**
  * Created by nathan on 8/10/16.
@@ -54,6 +56,27 @@ public class JSModule extends JSObject {
         property("filename", id);
         property("loaded", false);
         property("children", new JSArray<JSModule>(ctx, JSModule.class));
+    }
+
+    private static String _findNodeModulePackageJSON(AssetManager assetManager, String moduleName, String requiredFromDirname) {
+        String id = Utils.joinPath("node_modules", Utils.joinPath(moduleName, "package.json"));
+        String root = requiredFromDirname;
+        int depth = Utils.normalize(root).split(File.separator).length;
+        String fullPath = Utils.joinPath(root, id);
+
+        if (Utils.hasFile(assetManager, fullPath)) {
+            return fullPath;
+        } else {
+            while (depth-- >= 0) {
+                fullPath = Utils.joinPath(root, id);
+                root = Utils.joinPath(root, "..");
+
+                if (Utils.hasFile(assetManager, fullPath)) {
+                    return fullPath;
+                }
+            }
+            return null;
+        }
     }
 
     public void setActivity(Activity activity) {
@@ -111,7 +134,7 @@ public class JSModule extends JSObject {
         }
 
         if (moduleName != null) {
-            String pkgFullPath = Utils.findNodeModulePackageJSON(_assetManager, moduleName, parentDirname);
+            String pkgFullPath = _findNodeModulePackageJSON(_assetManager, moduleName, parentDirname);
 
             if (pkgFullPath != null) {
                 if (relativePath != null) {

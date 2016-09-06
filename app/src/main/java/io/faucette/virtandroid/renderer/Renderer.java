@@ -35,7 +35,7 @@ public class Renderer {
 
         _root = root;
         _activity = activity;
-        _context = (Context) activity.getApplicationContext();
+        _context = activity.getApplicationContext();
         _messenger = new Messenger(new WebSocketAdapter(activity, server));
 
         _messenger.on("virt.handleTransaction", new Callback() {
@@ -83,7 +83,11 @@ public class Renderer {
             JSONArray array = patches.getJSONArray(id);
 
             for (int i = 0, il = array.length(); i < il; i++) {
-                _applyPatch(id, array.getJSONObject(i));
+                try {
+                    _applyPatch(id, array.getJSONObject(i));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
         }
     }
@@ -97,11 +101,15 @@ public class Renderer {
         if (type.equals("MOUNT")) {
             _mount(patch.getJSONObject("next"), id);
         } else if (type.equals("UNMOUNT")) {
-            // unmount patch
+            _unmount(id);
         } else if (type.equals("INSERT")) {
-            // insert patch
+            _insert(patch.getInt("index"), patch.getJSONObject("next"), patch.getString("childId"), patch.getString("id"));
         } else if (type.equals("REMOVE")) {
-            // remove patch
+            String childId = null;
+            if (patch.has("childId")) {
+                childId = patch.getString("childId");
+            }
+            _remove(patch.getInt("index"), id, childId);
         } else if (type.equals("REPLACE")) {
             // replace patch
         } else if (type.equals("TEXT")) {
@@ -116,6 +124,32 @@ public class Renderer {
     private void _mount(JSONObject next, String id) throws Exception {
         _root.removeAllViews();
         _root.addView(Views.createFromJSON(_context, next, null, id));
+    }
+
+    private void _unmount(String id) throws Exception {
+        View view = _root.getChildAt(0);
+
+        if (view != null) {
+            Views.removeViews(_root.getChildAt(0));
+        }
+
+        _root.removeAllViews();
+    }
+
+    private void _insert(int index, JSONObject next, String childId, String id) throws Exception {
+        ViewGroup parentView = (ViewGroup) Views.getViewById(id);
+        View view = Views.createFromJSON(_context, next, null, id);
+        parentView.addView(view);
+    }
+
+    private void _remove(int index, String id, String childId) throws Exception {
+        View parentView = Views.getViewById(id);
+
+        if (parentView instanceof ViewGroup) {
+            ViewGroup parentViewGroup = ((ViewGroup) parentView);
+            Views.removeViews(parentViewGroup.getChildAt(index));
+            parentViewGroup.removeViewAt(index);
+        }
     }
 
     private void _text(String text, int index, String id) throws Exception {

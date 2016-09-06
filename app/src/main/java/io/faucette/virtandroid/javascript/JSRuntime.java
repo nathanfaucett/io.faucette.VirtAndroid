@@ -95,7 +95,7 @@ public class JSRuntime extends JSContext implements IJSRuntime {
             WebSocket = new JSWebSocket(this);
             XMLHttpRequest = new JSXMLHttpRequest(this);
         } catch (NoSuchMethodException e) {
-            Log.e("JSRuntime", e.toString());
+            e.printStackTrace();
         }
 
         property("global", global);

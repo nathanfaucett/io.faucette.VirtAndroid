@@ -52,7 +52,7 @@ public class JSWebSocket extends JSEventTarget {
             url = _uri.toString();
             protocol = _uri.getScheme();
         } catch (URISyntaxException e) {
-            Log.e("JSWebSocket", e.toString());
+            e.printStackTrace();
         }
 
         _jsThis.property("binaryType", new JSValue(ctx, ""));
@@ -100,7 +100,7 @@ public class JSWebSocket extends JSEventTarget {
 
             @Override
             public void onError(final Exception ex) {
-                Log.e("JSWebSocket", "Error " + ex.toString());
+                ex.printStackTrace();
                 _runtime.setImmediate(new JSFunction(_runtime, "onError") {
                     public void onError() {
                         _this.onError(_jsThis, ex);
@@ -113,7 +113,7 @@ public class JSWebSocket extends JSEventTarget {
         try {
             _webSocket.connect();
         } catch (final Exception ex) {
-            Log.e("JSWebSocket", ex.toString());
+            ex.printStackTrace();
             _runtime.setImmediate(new JSFunction(_runtime, "onError") {
                 public void onError() {
                     _this.onError(_jsThis, ex);

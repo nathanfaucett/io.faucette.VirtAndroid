@@ -30,7 +30,7 @@ public class Server extends FakeWebSocketServer {
 
     @Override
     public void onError(FakeWebSocket webSocket, Exception ex) {
-        Log.e("Server", ex.toString());
+        ex.printStackTrace();
     }
 
     public void addListener(Callback callback) {

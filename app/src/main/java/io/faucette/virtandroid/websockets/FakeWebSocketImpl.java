@@ -9,7 +9,7 @@ public class FakeWebSocketImpl {
     private final static HashMap<Integer, FakeWebSocketServer> _servers = new HashMap<>();
     private static long SOCKET_ID = 0;
 
-    public final static void listen(FakeWebSocketServer server, int port) throws Exception {
+    public static void listen(FakeWebSocketServer server, int port) throws Exception {
         if (_servers.containsKey(port)) {
             throw new Exception("port already in use");
         } else {
@@ -17,11 +17,11 @@ public class FakeWebSocketImpl {
         }
     }
 
-    public final static long getSocketId() {
+    public static long getSocketId() {
         return SOCKET_ID++;
     }
 
-    public final static void open(int port, FakeWebSocketClient clientWebSocket) throws Exception {
+    public static void open(int port, FakeWebSocketClient clientWebSocket) throws Exception {
         if (_servers.containsKey(port)) {
             FakeWebSocketServer server = _servers.get(port);
             server.createWebSocket(port, clientWebSocket);
@@ -30,7 +30,7 @@ public class FakeWebSocketImpl {
         }
     }
 
-    public final static void close(long id, int port, boolean remote) {
+    public static void close(long id, int port, boolean remote) {
         if (_servers.containsKey(port)) {
             FakeWebSocketServer server = _servers.get(port);
             server.removeWebSocket(id, remote);

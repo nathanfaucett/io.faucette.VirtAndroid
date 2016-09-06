@@ -20,7 +20,7 @@ public abstract class FakeWebSocketServer {
         try {
             FakeWebSocketImpl.listen(this, port);
         } catch (Exception ex) {
-            Log.e("FakeWebSocketServer", ex.toString());
+            ex.printStackTrace();
         }
     }
 
