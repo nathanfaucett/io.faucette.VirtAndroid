@@ -41,7 +41,7 @@ public class Utils {
 
     public static boolean isAbsolute(String path) {
         File file = new File(path);
-        return file == null ? false : file.isAbsolute();
+        return file.isAbsolute();
     }
 
     public static boolean isNodeModule(String path) {
@@ -50,12 +50,7 @@ public class Utils {
 
     public static String joinPath(String a, String b) {
         File file = new File(a, b);
-
-        if (file == null) {
-            return ".";
-        } else {
-            return normalize(file.getPath());
-        }
+        return normalize(file.getPath());
     }
 
     public static String dirname(String path) {

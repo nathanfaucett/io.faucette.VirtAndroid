@@ -86,6 +86,7 @@ public class JSModule extends JSObject {
 
     public JSValue require(String path) {
         boolean isNodeModule = Utils.isNodeModule(path);
+        String origPath = path;
 
         if (isNodeModule) {
             path = resolveModule(path);
@@ -105,7 +106,7 @@ public class JSModule extends JSObject {
         } else {
             throwJSError(
                     "no " + (isNodeModule ? "node module" : "file") +
-                            " found named " + path + " required from " +
+                            " found named " + origPath + " required from " +
                             Utils.dirname(property("id").toString())
             );
             return null;

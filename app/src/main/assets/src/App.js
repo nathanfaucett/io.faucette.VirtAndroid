@@ -8,17 +8,23 @@ module.exports = App;
 
 
 function App(props, children, context) {
+    var _this = this;
 
     virt.Component.call(this, props, children, context);
 
     this.state = {
         count: 0
     };
+
+    this.onClick = function(e) {
+        return _this.__onClick(e);
+    };
 }
 virt.Component.extend(App, "example.App");
 AppPrototype = App.prototype;
 
 AppPrototype.componentDidMount = function() {
+    ///*
     var _this = this;
 
     setTimeout(function onSetTimeout() {
@@ -26,24 +32,39 @@ AppPrototype.componentDidMount = function() {
                 count: _this.state.count + 1
             },
             function onReplaceState() {
-                setTimeout(onSetTimeout, 1000);
+                setTimeout(onSetTimeout, 0);
             }
          );
-    }, 1000);
+    }, 0);
+    //*/
+};
+
+AppPrototype.__onClick = function(e) {
+    this.replaceState({
+        count: this.state.count + 1
+    });
 };
 
 AppPrototype.render = function() {
     return (
         virt.createView("LinearLayout", {
-                padding: "16, 16, 16, 16"
+                layout_width: "match_parent",
+                layout_height: "match_parent",
+                padding: "16 16 16 16"
             },
-            virt.createView("RelativeLayout", {
-                    background_color: 0xFF000000,
-                    layout_width: "match_parent",
-                    padding: "16, 16, 16, 16"
-                },
-                this.state.count
-            )
+
+            virt.createView("TextView", {
+                layout_width: "wrap_content",
+                layout_height: "wrap_content",
+                text: this.state.count
+            }),
+
+            virt.createView("Button", {
+                onClick: this.onClick,
+                layout_width: "wrap_content",
+                layout_height: "wrap_content",
+                text: "Count!"
+            })
         )
     );
 };

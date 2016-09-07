@@ -2,6 +2,8 @@ package io.faucette.virtandroid.javascript;
 
 import android.util.Log;
 
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.handshake.ServerHandshake;
 import org.liquidplayer.webkit.javascriptcore.JSContext;
 import org.liquidplayer.webkit.javascriptcore.JSFunction;
 import org.liquidplayer.webkit.javascriptcore.JSObject;
@@ -9,8 +11,6 @@ import org.liquidplayer.webkit.javascriptcore.JSValue;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-
-import io.faucette.virtandroid.websockets.FakeWebSocketClient;
 
 
 /**
@@ -25,7 +25,8 @@ public class JSWebSocket extends JSEventTarget {
     private JSRuntime _runtime;
 
     private URI _uri;
-    private FakeWebSocketClient _webSocket;
+    //private FakeWebSocketClient _webSocket;
+    private WebSocketClient _webSocket;
 
     /* required by AndroidJSCore */
     public JSWebSocket() {
@@ -68,9 +69,9 @@ public class JSWebSocket extends JSEventTarget {
 
         createPrototype(_jsThis);
 
-        _webSocket = new FakeWebSocketClient(_uri) {
+        _webSocket = new WebSocketClient(_uri) {
             @Override
-            public void onOpen() {
+            public void onOpen(final ServerHandshake handshakedata) {
                 Log.i("JSWebSocket", "Open");
                 _runtime.setImmediate(new JSFunction(_runtime, "onOpen") {
                     public void onOpen() {
@@ -81,6 +82,7 @@ public class JSWebSocket extends JSEventTarget {
 
             @Override
             public void onMessage(final String data) {
+
                 _runtime.setImmediate(new JSFunction(_runtime, "onMessage") {
                     public void onMessage() {
                         _this.onMessage(_jsThis, data);
@@ -89,18 +91,22 @@ public class JSWebSocket extends JSEventTarget {
             }
 
             @Override
-            public void onClose(final boolean remote) {
+            public void onClose(final int code, final String reason, final boolean remote) {
+
                 Log.i("JSWebSocket", "Close remote: " + remote);
+
                 _runtime.setImmediate(new JSFunction(_runtime, "onClose") {
                     public void onClose() {
-                        _this.onClose(_jsThis, 0, "unknown", remote);
+                        _this.onClose(_jsThis, code, reason, remote);
                     }
                 });
             }
 
             @Override
             public void onError(final Exception ex) {
+
                 ex.printStackTrace();
+
                 _runtime.setImmediate(new JSFunction(_runtime, "onError") {
                     public void onError() {
                         _this.onError(_jsThis, ex);
@@ -108,7 +114,6 @@ public class JSWebSocket extends JSEventTarget {
                 });
             }
         };
-
 
         try {
             _webSocket.connect();
@@ -135,16 +140,25 @@ public class JSWebSocket extends JSEventTarget {
 
         proto.property("send", new JSFunction(ctx, "send") {
             public void send(JSValue value) {
-                _webSocket.send(value.toString());
+                _this.send(value);
             }
         });
         proto.property("close", new JSFunction(ctx, "close") {
             public void close() {
-                getThis().property("readyState", new JSValue(_runtime, CLOSING));
+                _this.close();
             }
         });
 
         return proto;
+    }
+
+    public final void send(final JSValue value) {
+        _webSocket.send(value.toString());
+    }
+
+    public final void close() {
+        getThis().property("readyState", new JSValue(_runtime, CLOSING));
+        _webSocket.close();
     }
 
     public final void onOpen(JSObject _jsThis) {

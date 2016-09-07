@@ -2,9 +2,6 @@ package io.faucette.virtandroid.renderer;
 
 
 import android.content.Context;
-import android.os.Build;
-import android.util.Log;
-import android.util.Property;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -19,10 +16,6 @@ import org.json.JSONObject;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.crypto.Mac;
 
 import io.faucette.virtandroid.Utils;
 
@@ -41,6 +34,7 @@ public class Views {
         _viewIds.put(view, id);
         _idViews.put(id, view);
     }
+
     private static void _removeView(String id, View view) {
         _viewIds.remove(view);
         _idViews.remove(id);
@@ -49,6 +43,7 @@ public class Views {
     public static View getViewById(String id) {
         return _idViews.get(id);
     }
+
     public static String getIdByView(View view) {
         return _viewIds.get(view);
     }
@@ -130,6 +125,12 @@ public class Views {
             @Override
             public void set(View view, JSONObject props, String origProp, String normProp) throws Exception {
                 Properties.setBackgroundColor(view, props, origProp, normProp);
+            }
+        });
+        setPropertySetter("text", new PropertySetter() {
+            @Override
+            public void set(View view, JSONObject props, String origProp, String normProp) throws Exception {
+                Properties.setText(view, props, origProp, normProp);
             }
         });
     }

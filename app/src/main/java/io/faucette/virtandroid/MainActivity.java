@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.ViewGroup;
 
 import io.faucette.virtandroid.javascript.JSRuntime;
+import io.faucette.virtandroid.renderer.Consts;
 import io.faucette.virtandroid.renderer.Renderer;
 import io.faucette.virtandroid.renderer.Views;
 
@@ -20,8 +21,10 @@ public class MainActivity extends AppCompatActivity {
 
         final Activity _this = this;
 
-        Server server = new Server();
-        server.listen(9999);
+        Server server = new Server(9999, _this);
+        server.start();
+
+        Consts.init();
 
         try {
             Views.init();

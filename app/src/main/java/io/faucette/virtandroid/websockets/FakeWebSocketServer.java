@@ -1,7 +1,5 @@
 package io.faucette.virtandroid.websockets;
 
-import android.util.Log;
-
 import java.util.Collection;
 import java.util.HashMap;
 

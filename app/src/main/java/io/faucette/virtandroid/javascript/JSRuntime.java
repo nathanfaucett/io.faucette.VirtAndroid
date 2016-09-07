@@ -17,6 +17,7 @@ import java.util.Collections;
  * Created by nathan on 8/10/16.
  */
 public class JSRuntime extends JSContext implements IJSRuntime {
+    private final Thread _thread;
     public JSObject global;
     public JSObject console;
     public JSObject process;
@@ -25,6 +26,7 @@ public class JSRuntime extends JSContext implements IJSRuntime {
     public JSBuffer Buffer;
     public JSWebSocket WebSocket;
     public JSXMLHttpRequest XMLHttpRequest;
+    private Activity _activity;
     private JSModule _rootModule;
     private ArrayList<JSEventCallback> _timeoutCallbacks;
 
@@ -33,6 +35,8 @@ public class JSRuntime extends JSContext implements IJSRuntime {
 
         super(IJSRuntime.class);
 
+        _thread = Thread.currentThread();
+        _activity = activity;
         _timeoutCallbacks = new ArrayList<>();
 
         _init();
@@ -42,7 +46,12 @@ public class JSRuntime extends JSContext implements IJSRuntime {
         _rootModule.require(".");
     }
 
+    public final Activity getActivity() {
+        return _activity;
+    }
+
     public final void setActivity(Activity activity) {
+        _activity = activity;
         _rootModule.setActivity(activity);
     }
 
@@ -53,7 +62,9 @@ public class JSRuntime extends JSContext implements IJSRuntime {
         Collections.sort(_timeoutCallbacks);
 
         // force a tick of the event loop
-        Thread.currentThread().interrupt();
+        synchronized (_thread) {
+            _thread.interrupt();
+        }
 
         return callback.id;
     }
@@ -75,7 +86,6 @@ public class JSRuntime extends JSContext implements IJSRuntime {
     }
 
     private void _init() {
-        final JSRuntime _this = this;
 
         setExceptionHandler(new IJSExceptionHandler() {
             @Override
@@ -112,6 +122,7 @@ public class JSRuntime extends JSContext implements IJSRuntime {
     private long _tick() {
         final ArrayList<JSEventCallback> _callbacks = new ArrayList<>();
         final long currentTime = System.currentTimeMillis();
+
 
         while (_timeoutCallbacks.size() > 0 && _timeoutCallbacks.get(0).timeout <= currentTime) {
             _callbacks.add(_timeoutCallbacks.remove(0));

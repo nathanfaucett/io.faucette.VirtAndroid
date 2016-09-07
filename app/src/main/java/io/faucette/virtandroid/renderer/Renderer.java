@@ -3,17 +3,14 @@ package io.faucette.virtandroid.renderer;
 
 import android.app.Activity;
 import android.content.Context;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.faucette.messenger.Callback;
 import io.faucette.messenger.Messenger;
@@ -28,48 +25,27 @@ public class Renderer {
     private Activity _activity;
     private Context _context;
     private Messenger _messenger;
+    private EventHandler _eventHandler;
 
 
-    public Renderer(final Activity activity, ViewGroup root, Server server) {
+    public Renderer(Activity activity, ViewGroup root, Server server) {
         final Renderer _this = this;
 
         _root = root;
         _activity = activity;
         _context = activity.getApplicationContext();
         _messenger = new Messenger(new WebSocketAdapter(activity, server));
+        _eventHandler = new EventHandler(_messenger);
 
         _messenger.on("virt.handleTransaction", new Callback() {
             @Override
             public void call(final JSONObject data) {
-                final AtomicBoolean done = new AtomicBoolean(false);
-
-                Runnable runnable = new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            _this._applyPatches(data.getJSONObject("patches"));
-                            _this._applyEvents(data.getJSONObject("events"));
-                            _this._applyPatches(data.getJSONObject("removes"));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-
-                        synchronized (this) {
-                            notifyAll();
-                            done.set(true);
-                        }
-                    }
-                };
-
-                activity.runOnUiThread(runnable);
-
-                synchronized (runnable) {
-                    while (!done.get()) {
-                        try {
-                            runnable.wait();
-                        } catch (InterruptedException e) {
-                        }
-                    }
+                try {
+                    _this._applyPatches(data.getJSONObject("patches"));
+                    _this._applyEvents(data.getJSONObject("events"));
+                    _this._applyPatches(data.getJSONObject("removes"));
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         });
@@ -92,7 +68,17 @@ public class Renderer {
         }
     }
 
-    private void _applyEvents(JSONObject events) {
+    private void _applyEvents(JSONObject events) throws Exception {
+        Iterator<String> keys = events.keys();
+
+        while (keys.hasNext()) {
+            String id = keys.next();
+            JSONArray eventArray = events.getJSONArray(id);
+
+            for (int i = 0, il = eventArray.length(); i < il; i++) {
+                _eventHandler.listenTo(id, eventArray.getString(i));
+            }
+        }
     }
 
     private void _applyPatch(String id, JSONObject patch) throws Exception {
@@ -117,7 +103,7 @@ public class Renderer {
         } else if (type.equals("ORDER")) {
             // order patch
         } else if (type.equals("PROPS")) {
-            // props patch
+            _props(id, patch.getJSONObject("next"), patch.getJSONObject("previous"));
         }
     }
 
@@ -157,10 +143,14 @@ public class Renderer {
 
         if (view instanceof TextView) {
             ((TextView) view).setText(text);
-        } else if (view instanceof ViewGroup){
+        } else if (view instanceof ViewGroup) {
             ViewGroup viewGroup = (ViewGroup) view;
             TextView textView = (TextView) viewGroup.getChildAt(index);
             textView.setText(text);
         }
+    }
+
+    private void _props(String id, JSONObject next, JSONObject previous) throws Exception {
+        Views.setProps(Views.getViewById(id), next);
     }
 }

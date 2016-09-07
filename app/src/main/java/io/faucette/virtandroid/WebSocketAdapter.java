@@ -23,11 +23,11 @@ public class WebSocketAdapter implements Adapter {
         _server.addListener(callback);
     }
 
-    public void onMessage(String data) {
-        _server.handleMessage(data);
+    public void onMessage(final String data) {
+        _server.onMessage(data);
     }
 
-    public void postMessage(String data) {
+    public void postMessage(final String data) {
         _server.sendToAll(data);
     }
 }
