@@ -44,8 +44,8 @@ public class Renderer {
                     _this._applyPatches(data.getJSONObject("patches"));
                     _this._applyEvents(data.getJSONObject("events"));
                     _this._applyPatches(data.getJSONObject("removes"));
-                } catch (Exception e) {
-                    e.printStackTrace();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                 }
             }
         });

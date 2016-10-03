@@ -29,7 +29,7 @@ public class JSRuntime extends JSContext implements IJSRuntime {
     private Activity _activity;
     private final Thread _thread;
     private JSModule _rootModule;
-    private List<JSEventCallback> _timeoutCallbacks;
+    private List<JSEventCallback> _callbacks;
 
 
     public JSRuntime(Activity activity) {
@@ -38,7 +38,7 @@ public class JSRuntime extends JSContext implements IJSRuntime {
 
         _activity = activity;
         _thread = Thread.currentThread();
-        _timeoutCallbacks = new ArrayList<>();
+        _callbacks = new ArrayList<>();
 
         _init();
 
@@ -56,31 +56,35 @@ public class JSRuntime extends JSContext implements IJSRuntime {
         _rootModule.setActivity(activity);
     }
 
-    public synchronized final long setTimeout(final JSFunction fn, final long delay) {
+    public final long setTimeout(final JSFunction fn, final long delay) {
         JSEventCallback callback = new JSEventCallback(fn, delay);
 
-        _timeoutCallbacks.add(callback);
-        Collections.sort(_timeoutCallbacks);
-
+        synchronized (_callbacks) {
+            _callbacks.add(callback);
+            Collections.sort(_callbacks);
+        }
+            
         // force a tick of the event loop
         _thread.interrupt();
 
         return callback.id;
     }
 
-    public synchronized final long setImmediate(final JSFunction fn) {
+    public final long setImmediate(final JSFunction fn) {
         return setTimeout(fn, 0);
     }
 
-    public synchronized final void clearTimeout(final long id) {
+    public final void clearTimeout(final long id) {
         int index = 0;
 
-        for (JSEventCallback callback : _timeoutCallbacks) {
-            if (callback.id == id) {
-                _timeoutCallbacks.remove(index);
-                break;
+        synchronized (_callbacks) {
+            for (JSEventCallback callback : _callbacks) {
+                if (callback.id == id) {
+                    _callbacks.remove(index);
+                    break;
+                }
+                index++;
             }
-            index++;
         }
     }
 
@@ -118,42 +122,39 @@ public class JSRuntime extends JSContext implements IJSRuntime {
         property("XMLHttpRequest", XMLHttpRequest);
     }
 
-    private synchronized long _tick() {
-        final List<JSEventCallback> _callbacks = new ArrayList<>();
+    private long _tick() {
+        final List<JSEventCallback> callbacks = new ArrayList<>();
         final long currentTime = System.currentTimeMillis();
+        long timeout = Long.MAX_VALUE;
 
-        while (_timeoutCallbacks.size() > 0 && _timeoutCallbacks.get(0).timeout <= currentTime) {
-            _callbacks.add(_timeoutCallbacks.remove(0));
+        synchronized (_callbacks) {
+            while (_callbacks.size() > 0 && _callbacks.get(0).timeout <= currentTime) {
+                callbacks.add(_callbacks.remove(0));
+            }
+
+            if (_callbacks.size() != 0) {
+                timeout = _callbacks.get(0).timeout - currentTime;
+            }
         }
 
-        if (_callbacks.size() != 0) {
-            this.sync(new Runnable() {
-                @Override
-                public void run() {
-                    for (JSEventCallback callback : _callbacks) {
-                        callback.function.call(null);
-                    }
-                }
-            });
+        if (callbacks.size() != 0) {
+            for (JSEventCallback callback : callbacks) {
+                callback.function.call(null);
+            }
         }
 
-        if (_timeoutCallbacks.size() == 0) {
-            return Long.MAX_VALUE; // sleep "forever"
-        } else {
-            return _timeoutCallbacks.get(0).timeout - currentTime;
-        }
+        return timeout;
     }
 
     public final void loop() {
         final JSRuntime _this = this;
-        long timeout;
+        long timeout = Long.MAX_VALUE;
 
         while (true) {
-            timeout = _tick();
-
             try {
                 _thread.sleep(timeout);
             } catch (InterruptedException ex) {
+                timeout = _tick();
             }
         }
     }

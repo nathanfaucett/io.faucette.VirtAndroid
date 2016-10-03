@@ -31,10 +31,10 @@ AppPrototype.componentDidMount = function() {
                 count: _this.state.count + 1
             },
             function onReplaceState() {
-                setTimeout(onSetTimeout, 1000);
+                setTimeout(onSetTimeout, 0);
             }
          );
-    }, 1000);
+    }, 0);
 };
 
 AppPrototype.__onClick = function(e) {

@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
         final Activity _this = this;
 
         Server server = new Server(9999, _this);
-        //server.start();
+        server.start();
 
         Consts.init();
 

@@ -7,7 +7,6 @@ import org.liquidplayer.webkit.javascriptcore.JSObject;
 import org.liquidplayer.webkit.javascriptcore.JSValue;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -16,6 +15,7 @@ import java.util.List;
  */
 public class JSEventTarget extends JSFunction {
     private HashMap<String, List<JSFunction>> _listeners;
+    private JSRuntime _runtime;
 
 
     public JSEventTarget() {
@@ -23,10 +23,12 @@ public class JSEventTarget extends JSFunction {
 
     public JSEventTarget(JSRuntime ctx, Method constructor, Class<? extends JSObject> instanceObject) throws NoSuchMethodException {
         super(ctx, constructor, instanceObject);
+        _runtime = ctx;
     }
 
     public JSEventTarget(JSRuntime ctx) throws NoSuchMethodException {
         super(ctx, JSEventTarget.class.getMethod("constructor"), JSEventTarget.class);
+        _runtime = ctx;
     }
 
     public void constructor() {
@@ -98,18 +100,20 @@ public class JSEventTarget extends JSFunction {
         }
     }
 
-    public void dispatchEvent(JSObject _this, JSEvent event) {
-        String type = event.property("type").toString();
-
-        JSObject allListeners = _this.property("[[listeners]]").toObject();
-        JSArray<JSFunction> listeners;
+    public void dispatchEvent(final JSObject _this, final JSEvent event) {
+        final String type = event.property("type").toString();
+        final JSObject allListeners = _this.property("[[listeners]]").toObject();
 
         if (allListeners.hasProperty(type)) {
-            listeners = (JSArray<JSFunction>) allListeners.property(type).toJSArray();
+            _runtime.setImmediate(new JSFunction(_runtime, "onDispatchEvent") {
+                public void onDispatchEvent() {
+                    JSArray<JSFunction> listeners = (JSArray<JSFunction>) allListeners.property(type).toJSArray();
 
-            for (JSValue listener : listeners) {
-                listener.toFunction().call(_this, event);
-            }
+                    for (JSValue listener : listeners) {
+                        listener.toFunction().call(_this, event);
+                    }
+                }
+            });
         }
     }
 }

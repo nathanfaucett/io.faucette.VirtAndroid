@@ -12,6 +12,7 @@ public class JSEventCallback implements Comparable<JSEventCallback> {
     public long timeout;
     public JSFunction function;
 
+
     public JSEventCallback(final JSFunction callback, final long delay) {
         id = ID++;
         function = callback;

@@ -1,19 +1,12 @@
 package io.faucette.virtandroid.javascript;
 
 
-import android.content.Context;
-import android.net.wifi.WifiManager;
-import android.text.format.Formatter;
 import android.util.Log;
 
-import com.koushikdutta.async.ByteBufferList;
-import com.koushikdutta.async.DataEmitter;
 import com.koushikdutta.async.callback.CompletedCallback;
-import com.koushikdutta.async.callback.DataCallback;
 import com.koushikdutta.async.http.AsyncHttpClient;
 import com.koushikdutta.async.http.WebSocket;
 
-import org.java_websocket.client.WebSocketClient;
 import org.liquidplayer.webkit.javascriptcore.JSContext;
 import org.liquidplayer.webkit.javascriptcore.JSFunction;
 import org.liquidplayer.webkit.javascriptcore.JSObject;
@@ -78,89 +71,46 @@ public class JSWebSocket extends JSEventTarget {
 
         createPrototype(_jsThis);
 
-        /*
-        _websocket = new WebSocketClient(_uri) {
+        AsyncHttpClient.getDefaultInstance().websocket("http://localhost:9999/", null, new AsyncHttpClient.WebSocketConnectCallback() {
             @Override
-            public void onOpen(final ServerHandshake handshakedata) {
-                Log.i("JSWebSocket", "Open");
-                _runtime.setImmediate(new JSFunction(_runtime, "onOpen") {
-                    public void onOpen() {
-                        _this.onOpen(_jsThis);
-                    }
-                });
-            }
-
-            @Override
-            public void onMessage(final String data) {
-
-                _runtime.setImmediate(new JSFunction(_runtime, "onMessage") {
-                    public void onMessage() {
-                        _this.onMessage(_jsThis, data);
-                    }
-                });
-            }
-
-            @Override
-            public void onClose(final int code, final String reason, final boolean remote) {
-
-                Log.i("JSWebSocket", "Close remote: " + remote);
-
-                _runtime.setImmediate(new JSFunction(_runtime, "onClose") {
-                    public void onClose() {
-                        _this.onClose(_jsThis, code, reason, remote);
-                    }
-                });
-            }
-
-            @Override
-            public void onError(final Exception ex) {
-
-                ex.printStackTrace();
-
-                _runtime.setImmediate(new JSFunction(_runtime, "onError") {
-                    public void onError() {
-                        _this.onError(_jsThis, ex);
-                    }
-                });
-            }
-        };
-
-        try {
-            _websocket.connect();
-        } catch (final Exception ex) {
-            ex.printStackTrace();
-            _runtime.setImmediate(new JSFunction(_runtime, "onError") {
-                public void onError() {
-                    _this.onError(_jsThis, ex);
-                }
-            });
-        }
-        */
-
-        AsyncHttpClient.getDefaultInstance().websocket("http://localhost:9999", null, new AsyncHttpClient.WebSocketConnectCallback() {
-            @Override
-            public void onCompleted(Exception ex, WebSocket websocket) {
+            public void onCompleted(final Exception ex, final WebSocket websocket) {
                 if (ex != null) {
                     ex.printStackTrace();
-                    _this.onError(_jsThis, ex);
+                    _runtime.setImmediate(new JSFunction(_runtime, "onError") {
+                        public void onError() {
+                            _this.onError(_jsThis, ex);
+                        }
+                    });
                 } else {
                     _websocket = websocket;
 
                     websocket.setClosedCallback(new CompletedCallback() {
                         @Override
-                        public void onCompleted(Exception ex) {
-                            _this.onError(_jsThis, ex);
+                        public void onCompleted(final Exception ex) {
+                            _runtime.setImmediate(new JSFunction(_runtime, "onError") {
+                                public void onError() {
+                                    _this.onError(_jsThis, ex);
+                                }
+                            });
                         }
                     });
 
                     websocket.setStringCallback(new WebSocket.StringCallback() {
-                        public void onStringAvailable(String s) {
-                            _this.onMessage(_jsThis, s);
+                        public void onStringAvailable(final String s) {
+                            _runtime.setImmediate(new JSFunction(_runtime, "onMessage") {
+                                public void onMessage() {
+                                    _this.onMessage(_jsThis, s);
+                                }
+                            });
                         }
                     });
 
                     Log.i("JSWebSocket", "connected");
-                    _this.onOpen(_jsThis);
+                    _runtime.setImmediate(new JSFunction(_runtime, "onOpen") {
+                        public void onOpen() {
+                            _this.onOpen(_jsThis);
+                        }
+                    });
                 }
             }
         });

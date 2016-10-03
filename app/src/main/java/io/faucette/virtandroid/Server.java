@@ -12,7 +12,6 @@ import com.koushikdutta.async.http.server.AsyncHttpServerRequest;
 import org.java_websocket.handshake.ClientHandshake;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import io.faucette.messenger.Callback;
@@ -25,6 +24,7 @@ public class Server {
     private List<Callback> _callbacks;
     private List<WebSocket> _sockets;
     private AsyncHttpServer _server;
+    private int _port;
 
 
     public Server(int port, Activity activity) {
@@ -33,8 +33,7 @@ public class Server {
         _callbacks = new ArrayList<>();
         _sockets = new ArrayList<>();
         _server = new AsyncHttpServer();
-
-        final Server _this = this;
+        _port = port;
 
         _server.setErrorCallback(new CompletedCallback() {
             @Override
@@ -43,11 +42,10 @@ public class Server {
             }
         });
 
+        final Server _this = this;
         _server.websocket("/", new AsyncHttpServer.WebSocketRequestCallback() {
             @Override
             public void onConnected(final WebSocket websocket, AsyncHttpServerRequest request) {
-
-                _this.onOpen(websocket, null);
 
                 _sockets.add(websocket);
 
@@ -55,29 +53,30 @@ public class Server {
                     @Override
                     public void onCompleted(Exception ex) {
                         try {
-                            if (ex != null) {
-                                Log.e("WebSocket", "Error");
-                            }
+                            _this.onError(websocket, ex);
                         } finally {
                             _sockets.remove(websocket);
                         }
                     }
                 });
-
                 websocket.setStringCallback(new WebSocket.StringCallback() {
                     @Override
                     public void onStringAvailable(String s) {
-                        _this.onMessage(s);
+                        _this.onMessage(websocket, s);
                     }
                 });
+
+                _this.onOpen(websocket, null);
             }
         });
-
-        _server.listen(port);
     }
 
     public Server(Activity activity) {
         this(9999, activity);
+    }
+
+    public void start() {
+        _server.listen(_port);
     }
 
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
@@ -123,67 +122,3 @@ public class Server {
         }
     }
 }
-/*
-public class Server extends WebSocketServer {
-    private Activity _activity;
-    private List<Callback> _callbacks;
-
-
-    public Server(int port, Activity activity) {
-
-        super(new InetSocketAddress(port));
-
-        _callbacks = new ArrayList<>();
-        _activity = activity;
-    }
-
-    public Server(Activity activity) {
-        this(9999, activity);
-    }
-
-    public void onOpen(WebSocket conn, ClientHandshake handshake) {
-        Log.i("Server", "WebSocket connected");
-    }
-
-    public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-        Log.i("Server", "WebSocket closed - code: " + code + " reason: " + reason + " remote: " + remote);
-    }
-
-    public void onMessage(WebSocket conn, String message) {
-        onMessage(message);
-    }
-
-    public void onError(WebSocket conn, Exception ex) {
-        ex.printStackTrace();
-    }
-
-    public void addListener(Callback callback) {
-        _callbacks.add(callback);
-    }
-
-    public void removeListener(Callback callback) {
-        _callbacks.remove(callback);
-    }
-
-    public void onMessage(final String data) {
-        _activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                for (Callback callback : _callbacks) {
-                    callback.call(data);
-                }
-            }
-        });
-    }
-
-    public void sendToAll(final String data) {
-        Collection<WebSocket> connections = connections();
-
-        synchronized (connections) {
-            for (WebSocket conn : connections) {
-                conn.send(data);
-            }
-        }
-    }
-}
-*/
