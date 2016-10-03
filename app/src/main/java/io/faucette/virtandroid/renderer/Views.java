@@ -81,10 +81,10 @@ public class Views {
     }
 
     public static void init() throws Exception {
-        addViewClass("TextView", TextView.class);
-        addViewClass("Button", Button.class);
-        addViewClass("LinearLayout", LinearLayout.class);
-        addViewClass("RelativeLayout", RelativeLayout.class);
+        addViewClass("android.widget.TextView", TextView.class);
+        addViewClass("android.widget.Button", Button.class);
+        addViewClass("android.widget.LinearLayout", LinearLayout.class);
+        addViewClass("android.widget.RelativeLayout", RelativeLayout.class);
 
         PropertySetter layoutWidthSetter = new PropertySetter() {
             @Override

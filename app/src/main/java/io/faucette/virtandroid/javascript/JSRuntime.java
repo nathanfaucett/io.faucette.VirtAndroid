@@ -11,13 +11,13 @@ import org.liquidplayer.webkit.javascriptcore.JSObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 
 /**
  * Created by nathan on 8/10/16.
  */
 public class JSRuntime extends JSContext implements IJSRuntime {
-    private final Thread _thread;
     public JSObject global;
     public JSObject console;
     public JSObject process;
@@ -27,16 +27,17 @@ public class JSRuntime extends JSContext implements IJSRuntime {
     public JSWebSocket WebSocket;
     public JSXMLHttpRequest XMLHttpRequest;
     private Activity _activity;
+    private final Thread _thread;
     private JSModule _rootModule;
-    private ArrayList<JSEventCallback> _timeoutCallbacks;
+    private List<JSEventCallback> _timeoutCallbacks;
 
 
     public JSRuntime(Activity activity) {
 
         super(IJSRuntime.class);
 
-        _thread = Thread.currentThread();
         _activity = activity;
+        _thread = Thread.currentThread();
         _timeoutCallbacks = new ArrayList<>();
 
         _init();
@@ -55,25 +56,23 @@ public class JSRuntime extends JSContext implements IJSRuntime {
         _rootModule.setActivity(activity);
     }
 
-    public final long setTimeout(final JSFunction fn, final long delay) {
+    public synchronized final long setTimeout(final JSFunction fn, final long delay) {
         JSEventCallback callback = new JSEventCallback(fn, delay);
 
         _timeoutCallbacks.add(callback);
         Collections.sort(_timeoutCallbacks);
 
         // force a tick of the event loop
-        synchronized (_thread) {
-            _thread.interrupt();
-        }
+        _thread.interrupt();
 
         return callback.id;
     }
 
-    public final long setImmediate(final JSFunction fn) {
+    public synchronized final long setImmediate(final JSFunction fn) {
         return setTimeout(fn, 0);
     }
 
-    public final void clearTimeout(final long id) {
+    public synchronized final void clearTimeout(final long id) {
         int index = 0;
 
         for (JSEventCallback callback : _timeoutCallbacks) {
@@ -119,10 +118,9 @@ public class JSRuntime extends JSContext implements IJSRuntime {
         property("XMLHttpRequest", XMLHttpRequest);
     }
 
-    private long _tick() {
-        final ArrayList<JSEventCallback> _callbacks = new ArrayList<>();
+    private synchronized long _tick() {
+        final List<JSEventCallback> _callbacks = new ArrayList<>();
         final long currentTime = System.currentTimeMillis();
-
 
         while (_timeoutCallbacks.size() > 0 && _timeoutCallbacks.get(0).timeout <= currentTime) {
             _callbacks.add(_timeoutCallbacks.remove(0));
@@ -140,18 +138,21 @@ public class JSRuntime extends JSContext implements IJSRuntime {
         }
 
         if (_timeoutCallbacks.size() == 0) {
-            return Long.MAX_VALUE; // sleep forever
+            return Long.MAX_VALUE; // sleep "forever"
         } else {
             return _timeoutCallbacks.get(0).timeout - currentTime;
         }
     }
 
     public final void loop() {
+        final JSRuntime _this = this;
+        long timeout;
+
         while (true) {
-            long timeout = _tick();
+            timeout = _tick();
 
             try {
-                Thread.sleep(timeout);
+                _thread.sleep(timeout);
             } catch (InterruptedException ex) {
             }
         }

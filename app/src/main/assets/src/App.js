@@ -24,7 +24,6 @@ virt.Component.extend(App, "example.App");
 AppPrototype = App.prototype;
 
 AppPrototype.componentDidMount = function() {
-    ///*
     var _this = this;
 
     setTimeout(function onSetTimeout() {
@@ -32,11 +31,10 @@ AppPrototype.componentDidMount = function() {
                 count: _this.state.count + 1
             },
             function onReplaceState() {
-                setTimeout(onSetTimeout, 0);
+                setTimeout(onSetTimeout, 1000);
             }
          );
-    }, 0);
-    //*/
+    }, 1000);
 };
 
 AppPrototype.__onClick = function(e) {
@@ -47,19 +45,19 @@ AppPrototype.__onClick = function(e) {
 
 AppPrototype.render = function() {
     return (
-        virt.createView("LinearLayout", {
+        virt.createView("android.widget.LinearLayout", {
                 layout_width: "match_parent",
                 layout_height: "match_parent",
                 padding: "16 16 16 16"
             },
 
-            virt.createView("TextView", {
+            virt.createView("android.widget.TextView", {
                 layout_width: "wrap_content",
                 layout_height: "wrap_content",
                 text: this.state.count
             }),
 
-            virt.createView("Button", {
+            virt.createView("android.widget.Button", {
                 onClick: this.onClick,
                 layout_width: "wrap_content",
                 layout_height: "wrap_content",

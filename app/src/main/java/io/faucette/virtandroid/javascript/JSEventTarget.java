@@ -9,12 +9,13 @@ import org.liquidplayer.webkit.javascriptcore.JSValue;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by nathan on 9/5/16.
  */
 public class JSEventTarget extends JSFunction {
-    private HashMap<String, ArrayList<JSFunction>> _listeners;
+    private HashMap<String, List<JSFunction>> _listeners;
 
 
     public JSEventTarget() {

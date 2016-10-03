@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -85,7 +86,7 @@ public class Utils {
 
     public static String camelCase(String string, boolean lowFirstLetter) {
         Matcher matcher = _reInflect.matcher(string);
-        ArrayList<String> parts = new ArrayList<>();
+        List<String> parts = new ArrayList<>();
 
         while (matcher.find()) {
             parts.add(matcher.group());
@@ -107,5 +108,12 @@ public class Utils {
 
     public static String camelCase(String string) {
         return camelCase(string, true);
+    }
+
+    public static String leftPad(String str, char ch, int length) {
+        while (str.length() < length) {
+            str = ch + str;
+        }
+        return str;
     }
 }

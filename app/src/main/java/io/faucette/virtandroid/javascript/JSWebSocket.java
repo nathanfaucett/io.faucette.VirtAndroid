@@ -1,9 +1,19 @@
 package io.faucette.virtandroid.javascript;
 
+
+import android.content.Context;
+import android.net.wifi.WifiManager;
+import android.text.format.Formatter;
 import android.util.Log;
 
+import com.koushikdutta.async.ByteBufferList;
+import com.koushikdutta.async.DataEmitter;
+import com.koushikdutta.async.callback.CompletedCallback;
+import com.koushikdutta.async.callback.DataCallback;
+import com.koushikdutta.async.http.AsyncHttpClient;
+import com.koushikdutta.async.http.WebSocket;
+
 import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
 import org.liquidplayer.webkit.javascriptcore.JSContext;
 import org.liquidplayer.webkit.javascriptcore.JSFunction;
 import org.liquidplayer.webkit.javascriptcore.JSObject;
@@ -25,8 +35,7 @@ public class JSWebSocket extends JSEventTarget {
     private JSRuntime _runtime;
 
     private URI _uri;
-    //private FakeWebSocketClient _webSocket;
-    private WebSocketClient _webSocket;
+    private WebSocket _websocket;
 
     /* required by AndroidJSCore */
     public JSWebSocket() {
@@ -69,7 +78,8 @@ public class JSWebSocket extends JSEventTarget {
 
         createPrototype(_jsThis);
 
-        _webSocket = new WebSocketClient(_uri) {
+        /*
+        _websocket = new WebSocketClient(_uri) {
             @Override
             public void onOpen(final ServerHandshake handshakedata) {
                 Log.i("JSWebSocket", "Open");
@@ -116,7 +126,7 @@ public class JSWebSocket extends JSEventTarget {
         };
 
         try {
-            _webSocket.connect();
+            _websocket.connect();
         } catch (final Exception ex) {
             ex.printStackTrace();
             _runtime.setImmediate(new JSFunction(_runtime, "onError") {
@@ -125,6 +135,35 @@ public class JSWebSocket extends JSEventTarget {
                 }
             });
         }
+        */
+
+        AsyncHttpClient.getDefaultInstance().websocket("http://localhost:9999", null, new AsyncHttpClient.WebSocketConnectCallback() {
+            @Override
+            public void onCompleted(Exception ex, WebSocket websocket) {
+                if (ex != null) {
+                    ex.printStackTrace();
+                    _this.onError(_jsThis, ex);
+                } else {
+                    _websocket = websocket;
+
+                    websocket.setClosedCallback(new CompletedCallback() {
+                        @Override
+                        public void onCompleted(Exception ex) {
+                            _this.onError(_jsThis, ex);
+                        }
+                    });
+
+                    websocket.setStringCallback(new WebSocket.StringCallback() {
+                        public void onStringAvailable(String s) {
+                            _this.onMessage(_jsThis, s);
+                        }
+                    });
+
+                    Log.i("JSWebSocket", "connected");
+                    _this.onOpen(_jsThis);
+                }
+            }
+        });
     }
 
     public JSObject createPrototype(JSObject proto) {
@@ -153,12 +192,16 @@ public class JSWebSocket extends JSEventTarget {
     }
 
     public final void send(final JSValue value) {
-        _webSocket.send(value.toString());
+        if (_websocket != null) {
+            _websocket.send(value.toString());
+        }
     }
 
     public final void close() {
         getThis().property("readyState", new JSValue(_runtime, CLOSING));
-        _webSocket.close();
+        if (_websocket != null) {
+            _websocket.close();
+        }
     }
 
     public final void onOpen(JSObject _jsThis) {
