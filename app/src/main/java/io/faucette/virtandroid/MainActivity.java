@@ -4,6 +4,7 @@ package io.faucette.virtandroid;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.ViewGroup;
 
 import io.faucette.virtandroid.javascript.JSRuntime;
@@ -32,14 +33,14 @@ public class MainActivity extends AppCompatActivity {
             ex.printStackTrace();
         }
 
-        final Thread thread = new Thread(new Runnable() {
+        final Thread jsThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 final JSRuntime runtime = new JSRuntime(_this);
                 runtime.loop();
             }
         });
-        thread.start();
+        jsThread.start();
 
         Renderer renderer = new Renderer(_this, (ViewGroup) findViewById(android.R.id.content), server);
     }

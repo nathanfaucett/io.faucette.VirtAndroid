@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static java.lang.Thread.State.RUNNABLE;
+
 
 /**
  * Created by nathan on 8/10/16.
@@ -30,6 +32,7 @@ public class JSRuntime extends JSContext implements IJSRuntime {
     private final Thread _thread;
     private JSModule _rootModule;
     private List<JSEventCallback> _callbacks;
+    private double _timeout = Double.MAX_VALUE;
 
 
     public JSRuntime(Activity activity) {
@@ -63,9 +66,15 @@ public class JSRuntime extends JSContext implements IJSRuntime {
             _callbacks.add(callback);
             Collections.sort(_callbacks);
         }
-            
+
         // force a tick of the event loop
-        _thread.interrupt();
+        if (_thread.getState() != RUNNABLE) {
+            _thread.interrupt();
+        } else {
+            synchronized (this) {
+                _timeout = _timeout < delay ? _timeout : delay;
+            }
+        }
 
         return callback.id;
     }
@@ -75,9 +84,9 @@ public class JSRuntime extends JSContext implements IJSRuntime {
     }
 
     public final void clearTimeout(final long id) {
-        int index = 0;
-
         synchronized (_callbacks) {
+            int index = 0;
+
             for (JSEventCallback callback : _callbacks) {
                 if (callback.id == id) {
                     _callbacks.remove(index);
@@ -122,39 +131,40 @@ public class JSRuntime extends JSContext implements IJSRuntime {
         property("XMLHttpRequest", XMLHttpRequest);
     }
 
-    private long _tick() {
+    private synchronized void _tick() {
         final List<JSEventCallback> callbacks = new ArrayList<>();
-        final long currentTime = System.currentTimeMillis();
-        long timeout = Long.MAX_VALUE;
+        final double currentTime = (System.nanoTime() * 1e-6);
 
         synchronized (_callbacks) {
             while (_callbacks.size() > 0 && _callbacks.get(0).timeout <= currentTime) {
                 callbacks.add(_callbacks.remove(0));
             }
+        }
 
+        synchronized (this) {
             if (_callbacks.size() != 0) {
-                timeout = _callbacks.get(0).timeout - currentTime;
+                _timeout = _callbacks.get(0).timeout - currentTime;
+            } else {
+                _timeout = Double.MAX_VALUE;
             }
         }
 
         if (callbacks.size() != 0) {
             for (JSEventCallback callback : callbacks) {
-                callback.function.call(null);
+                callback.call();
             }
         }
-
-        return timeout;
     }
 
     public final void loop() {
         final JSRuntime _this = this;
-        long timeout = Long.MAX_VALUE;
 
         while (true) {
             try {
-                _thread.sleep(timeout);
+                _thread.sleep((long) _timeout);
             } catch (InterruptedException ex) {
-                timeout = _tick();
+            } finally {
+                _tick();
             }
         }
     }

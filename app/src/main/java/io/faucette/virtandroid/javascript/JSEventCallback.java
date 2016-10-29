@@ -1,5 +1,7 @@
 package io.faucette.virtandroid.javascript;
 
+import android.util.Log;
+
 import org.liquidplayer.webkit.javascriptcore.JSFunction;
 
 /**
@@ -9,14 +11,14 @@ public class JSEventCallback implements Comparable<JSEventCallback> {
     private static long ID = 0;
 
     public long id;
-    public long timeout;
+    public double timeout;
     public JSFunction function;
 
 
     public JSEventCallback(final JSFunction callback, final long delay) {
         id = ID++;
         function = callback;
-        timeout = System.currentTimeMillis() + (delay > 0 ? delay : 0);
+        timeout = (System.nanoTime() * 1e-6) + (delay > 0 ? delay : 0);
     }
 
     public JSEventCallback(final JSFunction callback) {
@@ -25,8 +27,18 @@ public class JSEventCallback implements Comparable<JSEventCallback> {
         timeout = 0;
     }
 
+    public void call() {
+        function.call(null);
+    }
+
     @Override
     public int compareTo(JSEventCallback other) {
-        return (int) (timeout - other.timeout);
+        if (timeout < other.timeout) {
+            return -1;
+        } else if (timeout > other.timeout) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 }

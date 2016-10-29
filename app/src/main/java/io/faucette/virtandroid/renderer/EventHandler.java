@@ -1,6 +1,7 @@
 package io.faucette.virtandroid.renderer;
 
 
+import android.util.Log;
 import android.view.View;
 
 import org.json.JSONObject;

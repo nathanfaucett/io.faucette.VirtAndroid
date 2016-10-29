@@ -11,11 +11,9 @@ import io.faucette.messenger.Callback;
  * Created by nathan on 8/29/16.
  */
 public class WebSocketAdapter implements Adapter {
-    private Activity _activity;
     private Server _server;
 
-    public WebSocketAdapter(Activity activity, Server server) {
-        _activity = activity;
+    public WebSocketAdapter(Server server) {
         _server = server;
     }
 
@@ -24,7 +22,7 @@ public class WebSocketAdapter implements Adapter {
     }
 
     public void onMessage(final String data) {
-        _server.onMessage(data);
+        _server.handleMessage(data);
     }
 
     public void postMessage(final String data) {

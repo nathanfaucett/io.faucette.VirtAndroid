@@ -15,6 +15,8 @@ import org.liquidplayer.webkit.javascriptcore.JSValue;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import io.faucette.virtandroid.websockets.FakeWebSocketClient;
+
 
 /**
  * Created by nathan on 8/28/16.
@@ -28,7 +30,9 @@ public class JSWebSocket extends JSEventTarget {
     private JSRuntime _runtime;
 
     private URI _uri;
-    private WebSocket _websocket;
+    //private WebSocket _websocket;
+    private FakeWebSocketClient _websocket;
+
 
     /* required by AndroidJSCore */
     public JSWebSocket() {
@@ -71,6 +75,7 @@ public class JSWebSocket extends JSEventTarget {
 
         createPrototype(_jsThis);
 
+        /*
         AsyncHttpClient.getDefaultInstance().websocket("http://localhost:9999/", null, new AsyncHttpClient.WebSocketConnectCallback() {
             @Override
             public void onCompleted(final Exception ex, final WebSocket websocket) {
@@ -114,6 +119,66 @@ public class JSWebSocket extends JSEventTarget {
                 }
             }
         });
+        */
+
+        _websocket = new FakeWebSocketClient(_uri) {
+            @Override
+            public void onOpen() {
+
+                Log.i("JSWebSocket", "Open");
+
+                _runtime.setImmediate(new JSFunction(_runtime, "onOpen") {
+                    public void onOpen() {
+                        _this.onOpen(_jsThis);
+                    }
+                });
+            }
+
+            @Override
+            public void onMessage(final String data) {
+                _runtime.setImmediate(new JSFunction(_runtime, "onMessage") {
+                    public void onMessage() {
+                        _this.onMessage(_jsThis, data);
+                    }
+                });
+            }
+
+            @Override
+            public void onClose(final boolean remote) {
+
+                Log.i("JSWebSocket", "Close remote: " + remote);
+
+                _runtime.setImmediate(new JSFunction(_runtime, "onClose") {
+                    public void onClose() {
+                        _this.onClose(_jsThis, 0, "unknown", remote);
+                    }
+                });
+            }
+
+            @Override
+            public void onError(final Exception ex) {
+
+                Log.e("JSWebSocket", "Error " + ex.toString());
+
+                _runtime.setImmediate(new JSFunction(_runtime, "onError") {
+                    public void onError() {
+                        _this.onError(_jsThis, ex);
+                    }
+                });
+            }
+        };
+
+
+        try {
+            _websocket.connect();
+        } catch (final Exception ex) {
+            Log.e("JSWebSocket", ex.toString());
+            _runtime.setImmediate(new JSFunction(_runtime, "onError") {
+                public void onError() {
+                    _this.onError(_jsThis, ex);
+                }
+            });
+        }
     }
 
     public JSObject createPrototype(JSObject proto) {
@@ -128,13 +193,21 @@ public class JSWebSocket extends JSEventTarget {
         final JSWebSocket _this = this;
 
         proto.property("send", new JSFunction(ctx, "send") {
-            public void send(JSValue value) {
-                _this.send(value);
+            public void send(final JSValue value) {
+                _runtime.setImmediate(new JSFunction(_runtime, "onSend") {
+                    public void onSend() {
+                        _this.send(value);
+                    }
+                });
             }
         });
         proto.property("close", new JSFunction(ctx, "close") {
             public void close() {
-                _this.close();
+                _runtime.setImmediate(new JSFunction(_runtime, "onClose") {
+                    public void onClose() {
+                        _this.close();
+                    }
+                });
             }
         });
 
@@ -142,15 +215,19 @@ public class JSWebSocket extends JSEventTarget {
     }
 
     public final void send(final JSValue value) {
-        if (_websocket != null) {
-            _websocket.send(value.toString());
+        synchronized (_websocket) {
+            if (_websocket != null) {
+                _websocket.send(value.toString());
+            }
         }
     }
 
     public final void close() {
         getThis().property("readyState", new JSValue(_runtime, CLOSING));
-        if (_websocket != null) {
-            _websocket.close();
+        synchronized (_websocket) {
+            if (_websocket != null) {
+                _websocket.close();
+            }
         }
     }
 

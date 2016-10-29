@@ -1,5 +1,6 @@
 package io.faucette.virtandroid.renderer;
 
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.MotionEvent;
 import android.view.View;

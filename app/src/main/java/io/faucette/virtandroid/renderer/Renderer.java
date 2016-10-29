@@ -34,7 +34,7 @@ public class Renderer {
         _root = root;
         _activity = activity;
         _context = activity.getApplicationContext();
-        _messenger = new Messenger(new WebSocketAdapter(activity, server));
+        _messenger = new Messenger(new WebSocketAdapter(server));
         _eventHandler = new EventHandler(_messenger);
 
         _messenger.on("virt.handleTransaction", new Callback() {

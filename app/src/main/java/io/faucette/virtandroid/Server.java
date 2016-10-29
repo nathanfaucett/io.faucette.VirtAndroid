@@ -1,124 +1,66 @@
 package io.faucette.virtandroid;
 
-
 import android.app.Activity;
 import android.util.Log;
 
-import com.koushikdutta.async.callback.CompletedCallback;
-import com.koushikdutta.async.http.WebSocket;
-import com.koushikdutta.async.http.server.AsyncHttpServer;
-import com.koushikdutta.async.http.server.AsyncHttpServerRequest;
-
-import org.java_websocket.handshake.ClientHandshake;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import io.faucette.messenger.Callback;
+import io.faucette.virtandroid.websockets.FakeWebSocket;
+import io.faucette.virtandroid.websockets.FakeWebSocketServer;
 
 /**
- * Created by nathan on 8/29/16.
+ * Created by nathan on 9/1/16.
  */
-public class Server {
-    private Activity _activity;
-    private List<Callback> _callbacks;
-    private List<WebSocket> _sockets;
-    private AsyncHttpServer _server;
+public class Server extends FakeWebSocketServer {
+    private Callback _callback;
     private int _port;
-
+    private Activity _activity;
 
     public Server(int port, Activity activity) {
-
-        _activity = activity;
-        _callbacks = new ArrayList<>();
-        _sockets = new ArrayList<>();
-        _server = new AsyncHttpServer();
         _port = port;
-
-        _server.setErrorCallback(new CompletedCallback() {
-            @Override
-            public void onCompleted(Exception ex) {
-                ex.printStackTrace();
-            }
-        });
-
-        final Server _this = this;
-        _server.websocket("/", new AsyncHttpServer.WebSocketRequestCallback() {
-            @Override
-            public void onConnected(final WebSocket websocket, AsyncHttpServerRequest request) {
-
-                _sockets.add(websocket);
-
-                websocket.setClosedCallback(new CompletedCallback() {
-                    @Override
-                    public void onCompleted(Exception ex) {
-                        try {
-                            _this.onError(websocket, ex);
-                        } finally {
-                            _sockets.remove(websocket);
-                        }
-                    }
-                });
-                websocket.setStringCallback(new WebSocket.StringCallback() {
-                    @Override
-                    public void onStringAvailable(String s) {
-                        _this.onMessage(websocket, s);
-                    }
-                });
-
-                _this.onOpen(websocket, null);
-            }
-        });
+        _activity = activity;
     }
-
     public Server(Activity activity) {
         this(9999, activity);
     }
 
     public void start() {
-        _server.listen(_port);
+        listen(_port);
     }
 
-    public void onOpen(WebSocket conn, ClientHandshake handshake) {
-        Log.i("Server", "WebSocket connected");
+    @Override
+    public void onOpen(FakeWebSocket webSocket) {
+        Log.i("Server", "Open");
     }
 
-    public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-        Log.i("Server", "WebSocket closed - code: " + code + " reason: " + reason + " remote: " + remote);
+    @Override
+    public void onClose(FakeWebSocket webSocket, boolean remote) {
+        Log.i("Server", "Close remote:" + remote);
     }
 
-    public void onMessage(WebSocket conn, String message) {
-        onMessage(message);
+    @Override
+    public void onMessage(FakeWebSocket webSocket, String data) {
+        handleMessage(data);
     }
 
-    public void onError(WebSocket conn, Exception ex) {
-        ex.printStackTrace();
+    @Override
+    public void onError(FakeWebSocket webSocket, Exception ex) {
+        Log.e("Server", ex.toString());
     }
 
     public void addListener(Callback callback) {
-        _callbacks.add(callback);
+        _callback = callback;
     }
-
-    public void removeListener(Callback callback) {
-        _callbacks.remove(callback);
-    }
-
-    public void onMessage(final String data) {
+    public void handleMessage(final String data) {
         _activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                for (Callback callback : _callbacks) {
-                    callback.call(data);
-                }
+                _callback.call(data);
             }
         });
     }
-
-    public void sendToAll(final String data) {
-        synchronized (_sockets) {
-            for (WebSocket conn : _sockets) {
-                conn.send(data);
-            }
+    public void sendToAll(String data) {
+        for (FakeWebSocket webSocket: getWebSockets()) {
+            webSocket.send(data);
         }
     }
 }
